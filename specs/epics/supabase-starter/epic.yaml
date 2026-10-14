@@ -1,0 +1,34 @@
+# The epic's declaration. metadata.name equals the directory name; metadata.key
+# is the task-key prefix this epic reserves (SS → SS-1, SS-2, …). Owner, target
+# date and health are the platform's — never written here.
+apiVersion: orun.io/v1
+kind: Epic
+metadata:
+  name: supabase-starter
+  key: SS
+spec:
+  title: "Vercel's Next.js + Supabase Starter on Cloudflare Workers"
+  summary: "The Vercel with-supabase template — Supabase Auth with cookie-based sessions through @supabase/ssr, a session-refreshing proxy, sign-up/login/password flows and a protected page — runs on Cloudflare Workers + Static Assets through @opennextjs/cloudflare, with the Supabase project itself provisioned by Terraform through Orun (the Lumen baseline's supabase root) and its URL and publishable key wired into the build and the Worker per environment. It is the Cloudflare + Supabase port the coverage analysis ranks first: the template already speaks Supabase, so nothing in its code changes."
+  state: backlog
+  milestones:
+    - name: "SS0 — the spec"
+      exitCriteria:
+        - "the doc set and the task contracts are on main"
+      tasks: [SS-1]
+    - name: "SS1 — the starter on Workers"
+      exitCriteria:
+        - "apps/web is the upstream template, built by `next build` + `opennextjs-cloudflare build`"
+        - "the wrangler config renders per environment from the supabase root's wiring document (fixture in verify, live in deploy)"
+        - "`pnpm typecheck`, `pnpm lint`, `pnpm test` and `pnpm build` are green on main (Checks)"
+        - "`wrangler dev` serves the home page and sends a signed-out visitor of /protected to /auth/login"
+      tasks: [SS-2]
+    - name: "SS2 — the Supabase project from Terraform"
+      exitCriteria:
+        - "infra/terraform/supabase provisions the stage and prod projects and publishes URL, anon and service-role keys as orun secrets"
+        - "the app component declares the build-time env and the wiring it needs from that root"
+      tasks: [SS-3]
+    - name: "SS3 — ready to instantiate"
+      exitCriteria:
+        - "the README says how to run, test, preview and deploy it through Orun, and how auth email redirects are configured"
+        - "the as-built status records every departure from the upstream template"
+      tasks: [SS-4]

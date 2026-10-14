@@ -1,0 +1,17 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+spec:
+  goal: The upstream with-supabase starter runs on Cloudflare Workers + Static Assets with a per-environment rendered wrangler config and green checks
+  affects:
+    - apps/web
+    - tests/web
+    - tooling/wire
+    - pnpm-lock.yaml
+    - package.json
+    - turbo.json
+    - .gitignore
+  doneWhen:
+    - pnpm wire:fixture, typecheck, lint, test and build are green in Checks
+    - wrangler dev serves / and redirects a signed-out /protected to /auth/login
+  gates:
+    - checks
