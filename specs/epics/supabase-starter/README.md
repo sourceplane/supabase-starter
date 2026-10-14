@@ -8,7 +8,7 @@ The upstream code stays the code: the `@supabase/ssr` server/browser clients, th
 
 | Field | Value |
 |-------|-------|
-| Status | Draft |
+| Status | ✅ Shipped — SS0–SS3 landed (#1–#4); Supabase apply and live deploy gated on a linked workspace |
 | Cluster | **SS** (SS0–SS3) |
 | Owner(s) | `apps/web` (the app) · `tests/web` (proxy tests) · `infra/terraform/supabase` (the project) |
 | Builds on | `lumen` conventions — the `supabase` Terraform root and the orun-secrets wiring; `cirrus-baseline` conventions for the repository shape |
@@ -16,7 +16,7 @@ The upstream code stays the code: the `@supabase/ssr` server/browser clients, th
 | Changes | Adds the Workers build, the monorepo wrapper, tests, the Supabase root and the deploy contract; the template's app code is untouched |
 | Decisions locked | (1) OpenNext on Workers + Static Assets. (2) The publishable key is a wrangler var, not a secret: RLS protects the data. (3) `wrangler.jsonc` is rendered per environment from the wiring document; never committed. (4) No Hyperdrive: the template never opens a Postgres connection, it speaks PostgREST over HTTPS. |
 | Gate | SS1 is the first user-visible rung. SS2 needs a workspace with a Supabase connection to apply; it is verified by `plan`. |
-| Shipped as | |
+| Shipped as | `main` after [#4](https://github.com/sourceplane/supabase-starter/pull/4); verified locally under `wrangler dev` with fixture vars |
 
 ## Read order
 

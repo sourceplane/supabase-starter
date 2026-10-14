@@ -3,7 +3,7 @@
 Milestones land in order; each task is one pull request on an
 `orun/SS-n-<slug>` branch with an `Orun-Task: SS-n` trailer.
 
-## SS0 — the spec
+## SS0 — the spec ✅
 
 This doc set, `epic.yaml` and the task contracts, merged to `main`.
 
@@ -11,7 +11,7 @@ This doc set, `epic.yaml` and the task contracts, merged to `main`.
 - the five documents and `epic.yaml` are on `main`
 - `tasks/SS-1..SS-4.TaskContract.yaml` exist
 
-## SS1 — the starter on Workers
+## SS1 — the starter on Workers ✅
 
 `apps/web` is the upstream template with the Workers build around it;
 `wrangler.template.jsonc` + `wiring.fixture.json` render the config;
@@ -22,7 +22,7 @@ This doc set, `epic.yaml` and the task contracts, merged to `main`.
 - `wrangler dev` answers `/` with the starter's home page and `/protected` with a 307 to `/auth/login` when signed out
 - the auth pages render (`/auth/login`, `/auth/sign-up`)
 
-## SS2 — the Supabase project from Terraform
+## SS2 — the Supabase project from Terraform ✅
 
 `infra/terraform/supabase` provisions a project per environment and
 publishes URL, keys and the wiring document; `apps/web/component.yaml`
@@ -33,7 +33,7 @@ depends on it and declares the `secretEnv` the build and the deploy read.
 - the component's `secretEnv` keys match the root's `secretOutputs`
 - the fixture's wiring keys match the template's tokens (`wire:fixture` renders)
 
-## SS3 — ready to instantiate
+## SS3 — ready to instantiate ✅
 
 README (run, test, preview, deploy, the Supabase auth redirect URL),
 `IMPLEMENTATION-STATUS.md` with PRs and departures, epic `completed`.
