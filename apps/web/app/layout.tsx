@@ -4,9 +4,13 @@ import { ThemeProvider } from "next-themes";
 import "./globals.css";
 import { SITE_NAME } from "@/lib/site";
 
-const defaultUrl = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : "http://localhost:3000";
+// The product's public origin, which the Open Graph and Twitter images'
+// absolute URLs resolve against. Not upstream's: it read VERCEL_URL, which no
+// Cloudflare build has, so every deployed page pointed its images at
+// localhost. Baked in at build — component.yaml's buildCommand sets it from
+// the environment's SITE_URL (a custom domain), else its workers.dev URL, the
+// same origin the Supabase project's Auth sends its links to.
+const defaultUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),

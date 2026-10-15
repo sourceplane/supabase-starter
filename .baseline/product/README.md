@@ -113,10 +113,21 @@ key is public by design, and RLS is what protects the data.
 ## Custom domain
 
 The app answers on workers.dev from its first deploy. To serve it on your
-own domain, attach the domain to the Worker in Cloudflare (Workers & Pages →
-`supabase-starter-web-prod` → Settings → Domains & Routes), then make it
-prod's `app_origin` in `infra/terraform/supabase/terraform/main.tf` and merge
-— the apply owns the project's Auth Site URL and redirect allow-list.
+own domain:
+
+1. Attach the domain to the Worker in Cloudflare (Workers & Pages →
+   `supabase-starter-web-prod` → Settings → Domains & Routes).
+2. Set `SITE_URL: https://<your-domain>` under `environments.prod.env` in
+   `intent.yaml`. It is the one setting for the product's origin: the app's
+   build bakes it into its absolute links (the Open Graph and Twitter
+   images), and the supabase apply makes it the project's Auth Site URL and
+   redirect allow-list.
+3. Redeploy both: change the last line of `apps/web/component.yaml` and of
+   `infra/terraform/supabase/component.yaml` (`# orun: redeploy …`) in the
+   same pull request — a change to `intent.yaml` alone plans nothing.
+
+The apply owns the project's Auth URLs: an edit in the Supabase dashboard is
+undone by the next apply.
 
 ## CI
 

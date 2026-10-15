@@ -1,0 +1,29 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: SS-6
+  title: "The product's own origin"
+spec:
+  goal: A product built from the baseline links its Open Graph and Twitter images on its own origin — the environment's workers.dev URL, or the SITE_URL a custom domain sets, the same origin the Supabase project's Auth is given — and offers its visitors no Deploy to Vercel button
+  affects:
+    - apps/web/app/layout.tsx
+    - apps/web/app/page.tsx
+    - apps/web/app/protected/layout.tsx
+    - apps/web/components/deploy-button.tsx
+    - apps/web/component.yaml
+    - infra/terraform/supabase/terraform/main.tf
+    - intent.yaml
+    - tooling/rebrand/rebrand.mjs
+    - testing/**
+    - .baseline/product/README.md
+    - ai/context/operations.md
+    - BOOTSTRAP.md
+    - docs/phases/**
+    - specs/**
+    - tasks/**
+  doneWhen:
+    - the served home page's og:image and twitter:image start with the stage Worker's own origin in the e2e tier
+    - no page links to Vercel's clone flow
+    - SITE_URL under an environment's env is the single setting for the app's absolute links and Auth's Site URL
+  gates:
+    - checks

@@ -130,6 +130,12 @@ environments:
     env:
       BASE_DOMAIN: supabase-starter.example.com
 
+  # SITE_URL, set under an environment's `env:`, is the product's public
+  # origin there — the one its Open Graph and Twitter image links are built
+  # on and the one the Supabase project's Auth sends its links to. Unset, it
+  # is the environment's workers.dev URL. Set it once a custom domain answers
+  # for the environment (README, "Custom domain"); the next deploy of
+  # apps/web and the next apply of infra/terraform/supabase pick it up.
   stage:
     description: Deployed on every merge to main, before prod.
     url: https://supabase-starter-web-stage.your-workers-subdomain.workers.dev

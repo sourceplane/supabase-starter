@@ -40,3 +40,10 @@ spec:
         - "the tutorial's table has row-level security keyed on auth.uid(); the e2e proves each user reads only their own rows and anon none"
         - "Baseline CI is green: contract tests, the blueprint read by the pinned orun, the leak gate, the offline bootstrap and the product's plans, and the end-to-end tier"
       tasks: [SS-5]
+    - name: "SS5 — the product's own origin"
+      exitCriteria:
+        - "every page's og:image and twitter:image are absolute URLs on the product's own origin — the environment's workers.dev URL, or its SITE_URL — never localhost"
+        - "SITE_URL is one setting: the build's metadataBase and the Supabase project's Auth Site URL both follow it"
+        - "the product offers its visitors no Deploy to Vercel button"
+        - "the e2e tier asserts both on the served home page"
+      tasks: [SS-6]

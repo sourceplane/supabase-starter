@@ -8,8 +8,8 @@ The upstream code stays the code: the `@supabase/ssr` server/browser clients, th
 
 | Field | Value |
 |-------|-------|
-| Status | ✅ SS0–SS3 shipped (#1–#4) · 🔄 SS4 — a baseline (SS-5) in review. Supabase apply and live deploy gated on a linked workspace |
-| Cluster | **SS** (SS0–SS4) |
+| Status | ✅ SS0–SS4 shipped (#1–#5; SS4 tagged `baseline-v1`) · 🔄 SS5 — the product's own origin (SS-6) in review. Supabase apply and live deploy gated on a linked workspace |
+| Cluster | **SS** (SS0–SS5) |
 | Owner(s) | `apps/web` (the app) · `tests/web` (proxy tests) · `infra/terraform/supabase` (the project) |
 | Builds on | `lumen` conventions — the `supabase` Terraform root and the orun-secrets wiring; `cirrus-baseline` conventions for the repository shape |
 | Upstream | [vercel/next.js `examples/with-supabase`](https://github.com/vercel/next.js/tree/canary/examples/with-supabase) |
@@ -34,3 +34,4 @@ The upstream code stays the code: the `@supabase/ssr` server/browser clients, th
 | SS2 — the Supabase project from Terraform | `infra/terraform/supabase`, the app's `secretEnv` and `dependsOn` | the root plans; the wiring keys match the template |
 | SS3 — ready to instantiate | README, as-built status | a reader can run, test, preview and deploy it |
 | SS4 — a baseline | card, build document, rename, bootstrap tooling, the product's README and context pack, tests | a new product goes from nothing to live on stage and prod in one landing, signing users up on its first deploy; Baseline CI green |
+| SS5 — the product's own origin | `metadataBase` from the build's `NEXT_PUBLIC_SITE_URL`, SITE_URL read by the supabase root too, the Deploy to Vercel button removed | the served pages' image links name the product's origin; no Vercel call to action |

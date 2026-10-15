@@ -102,3 +102,15 @@ so a pull-request plan it makes holds the infra edge enforced rather than
 advisory. The product's own CI plans with its lane pin (v2.78.4), which
 reads them; the placement tier says when it cannot check them and the e2e
 tier, pinned at the lane version, does.
+
+## SS-L — The product's origin (RESOLVED, SS5)
+
+Next resolves the Open Graph and Twitter image links against `metadataBase`,
+which upstream took from `VERCEL_URL` — never set on Cloudflare, so every
+deployed page linked its images on `localhost:3000`. The origin is now baked
+in at build (`NEXT_PUBLIC_SITE_URL`: the environment's `SITE_URL`, else its
+workers.dev URL) rather than read per request, because the pages are
+prerendered. The supabase root reads the same `SITE_URL` for Auth's Site URL,
+so the two cannot disagree. Changing `SITE_URL` in `intent.yaml` alone plans
+nothing (`--changed` maps no component to it); the README says to redeploy
+both components with it.

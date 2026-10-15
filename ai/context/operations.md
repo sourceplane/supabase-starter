@@ -71,10 +71,14 @@ Caveats that matter:
   project): edit the template and run `pnpm run wire:fixture`. The deploy
   lanes render the real one in their own job tree; never commit a real
   project's URL or key.
-- Supabase Auth sends its links (password recovery, and confirmation when it
-  is on) to the Worker's workers.dev origin — the supabase root sets it from
-  its `workersDevSubdomain` parameter, and owns it: an edit in the dashboard
-  is undone by the next apply. On a custom domain, change it there (below).
+- The product's origin is ONE setting. Unset, it is the environment's
+  workers.dev URL (`<repo>-web-<env>.<subdomain>.workers.dev`); with a custom
+  domain, `SITE_URL` under the environment's `env:` in `intent.yaml`. The
+  app's build bakes it into its absolute links (the Open Graph and Twitter
+  images), and the supabase apply makes it Auth's Site URL and redirect
+  allow-list, where Supabase sends its links (password recovery, and
+  confirmation when it is on). The apply owns those Auth settings: an edit in
+  the dashboard is undone by the next apply.
 
 ## Auth and email
 
@@ -152,7 +156,7 @@ orun integrations list --org <ws> --json && orun cloud check --org <ws>
 | require email confirmation | SMTP first, then `authEmailConfirmation: "true"` (above) |
 | add a table | create it with `enable row level security` and `auth.uid()` policies (above); the day the product has migrations, Lumen's `packages/db` + `db-migrate` is the shape, reading `SUPABASE_DB_URL` |
 | redeploy without a change | edit the last line of the component's `component.yaml` (`# orun: redeploy <reason> <stamp>`) and merge — it is a deploy trigger, nothing reads it |
-| serve a custom domain | attach it to the Worker in Cloudflare, then make it prod's `app_origin` in `infra/terraform/supabase/terraform/main.tf` and merge — the apply owns Auth's Site URL and redirect allow-list, so a dashboard edit would be undone |
+| serve a custom domain | attach it to the Worker in Cloudflare, set `SITE_URL` under `environments.prod.env` in `intent.yaml`, and touch the redeploy line of both `apps/web/component.yaml` and `infra/terraform/supabase/component.yaml` in the same PR (an `intent.yaml` change alone plans nothing) |
 | headless credentials | `ORUN_TOKEN` (workspace-scoped) + `GITHUB_TOKEN` |
 
 The deployment record is the bootstrap's `02-docs` phase. Re-running it (the

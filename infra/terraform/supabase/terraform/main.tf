@@ -124,13 +124,23 @@ variable "authEmailConfirmation" {
 
 # --- Locals ---
 
+# The product's own origin when the environment has a custom domain: SITE_URL
+# under its `env:` in intent.yaml, which the runner exports to this job as it
+# does to the app's build (apps/web/component.yaml) — one setting, so Auth's
+# links and the app's absolute URLs name the same origin. Empty when unset.
+data "external" "site_url" {
+  program = ["bash", "-c", "jq -n --arg url \"$${SITE_URL:-}\" '{url: $url}'"]
+}
+
 locals {
   supabase_org_id = var.supabaseOrgId
   supabase_region = var.supabaseRegion
   project_name    = "${var.repo}-${var.environment}"
   # The environment's Worker, as apps/web/component.yaml names it:
-  # <repo>-web-<env> on the account's workers.dev subdomain.
-  app_origin = "https://${var.repo}-web-${var.environment}.${var.workersDevSubdomain}.workers.dev"
+  # <repo>-web-<env> on the account's workers.dev subdomain — unless SITE_URL
+  # names the environment's custom domain.
+  worker_origin = "https://${var.repo}-web-${var.environment}.${var.workersDevSubdomain}.workers.dev"
+  app_origin    = coalesce(trimsuffix(data.external.site_url.result.url, "/"), local.worker_origin)
 }
 
 # --- Generate database password ---

@@ -151,11 +151,17 @@ sb = yaml.safe_load((tree / "infra/terraform/supabase/component.yaml").read_text
 if sb.get("workersDevSubdomain") != sub:
     bad(f"the supabase root builds Auth's Site URL on {sb.get('workersDevSubdomain')}.workers.dev, not {sub}")
 
-# The upstream template's own links survive the rename.
-deploy = (tree / "apps/web/components/deploy-button.tsx").read_text()
-if "vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase" not in deploy \
-        or "demo-nextjs-with-supabase.vercel.app" not in deploy:
-    bad("the header's Deploy to Vercel link to the upstream example was renamed")
+# The product offers its visitors no "Deploy to Vercel": upstream's header
+# button cloned the example to Vercel, which a product on Cloudflare does not
+# ship.
+for p in tracked:
+    if p.startswith("apps/web/") and p.endswith((".ts", ".tsx")):
+        src = (tree / p).read_text()
+        if "Deploy to Vercel" in src or "vercel.com/new/clone" in src:
+            bad(f"{p} still offers to deploy the upstream example to Vercel")
+# The upstream example's own link survives the rename.
+if "github.com/vercel/next.js/tree/canary/examples/with-supabase" not in (tree / "README.md").read_text():
+    bad("README.md's link to the upstream example was renamed")
 
 # The wrangler config is committed, and is the fixture render of the
 # (rebranded) template — the composition checks it exists before the build.
@@ -370,13 +376,17 @@ print(f"   the plan resolves exactly the {len(minted)} keys the blueprint mints,
       f"{sorted(published & resolved)} of what the apply publishes ({len(FOR_THE_OWNER)} kept for the owner)")
 
 # The deploy itself: the structure check, the live wiring render, the
-# Worker's name, the smoke — and the Supabase project's Auth pointed at
-# exactly that Worker: main.tf builds the Site URL from TF_VAR_repo,
-# TF_VAR_environment and TF_VAR_workersDevSubdomain, which the apply's own
-# step exports.
+# Worker's name, the smoke — and ONE origin for the product: the Supabase
+# project's Auth and the app's absolute links both name exactly that Worker
+# (or the environment's SITE_URL). main.tf builds the Site URL from
+# TF_VAR_repo, TF_VAR_environment and TF_VAR_workersDevSubdomain, which the
+# apply's own step exports, unless SITE_URL is set; the build bakes the same
+# URL, with the same override, into NEXT_PUBLIC_SITE_URL.
 main_tf = (tree / "infra/terraform/supabase/terraform/main.tf").read_text()
-if 'app_origin = "https://${var.repo}-web-${var.environment}.${var.workersDevSubdomain}.workers.dev"' not in main_tf:
-    bad("main.tf no longer builds Auth's Site URL as https://<repo>-web-<env>.<subdomain>.workers.dev")
+if 'worker_origin = "https://${var.repo}-web-${var.environment}.${var.workersDevSubdomain}.workers.dev"' not in main_tf \
+        or "app_origin    = coalesce(trimsuffix(data.external.site_url.result.url, \"/\"), local.worker_origin)" not in main_tf \
+        or "$${SITE_URL:-}" not in main_tf:
+    bad("main.tf no longer builds Auth's Site URL as SITE_URL, else https://<repo>-web-<env>.<subdomain>.workers.dev")
 for env in ("stage", "prod"):
     sj = jobs.get(("supabase", env))
     exported = "\n".join(s.get("run") or "" for s in (sj or {}).get("steps") or [])
@@ -399,6 +409,9 @@ for env in ("stage", "prod"):
         bad(f"web@{env} checks another config before the build: {steps.get('verify-app-structure','').strip()}")
     if "tooling/wire/live.mjs" not in steps.get("build-app", "") or "--components supabase" not in steps.get("build-app", ""):
         bad(f"web@{env} does not render its wrangler config from the Supabase wiring before it builds")
+    origin = f'NEXT_PUBLIC_SITE_URL="${{SITE_URL:-https://{repo}-web-${{ORUN_ENVIRONMENT}}.{sub}.workers.dev}}"'
+    if origin not in steps.get("build-app", ""):
+        bad(f"web@{env} does not bake the product's own origin into its build ({origin})")
     if f'EFFECTIVE_WORKER_NAME="{repo}-web-{env}"' not in steps.get("deploy", ""):
         bad(f"web@{env} deploys a Worker not named {repo}-web-{env}")
     if "/api/health" not in steps.get("smoke", "") or f'export WORKERS_DEV_SUBDOMAIN="{sub}"' not in steps.get("smoke", ""):
