@@ -3,13 +3,14 @@
 #
 # Drives the real tooling/rebrand/rebrand.mjs over one-file trees and compares
 # the file. Each case is a shape this baseline's identity actually takes in the
-# tree — the name seam, the worker name, the Worker's own origin, the
-# placeholder domain, a secret ref, the `repo` the Supabase project is named
-# after — and each runs through as many passes as a bootstrap might make, so a
-# value written once must survive every later pass unchanged. Two things must
-# NOT be renamed although they spell the slug: the upstream template's own
-# links (its name is this baseline's slug), and a migration (its checksum is
-# in the manifest and in every database it was applied to).
+# tree — the name seam, the worker name, the Worker's own origin (the one the
+# build bakes into the app's absolute URLs and the Supabase project's Auth
+# sends its links to), the placeholder domain, a secret ref, the `repo` the
+# Supabase project is named after — and each runs through as many passes as a
+# bootstrap might make, so a value written once must survive every later pass
+# unchanged. What must NOT be renamed: the upstream example's own link, and
+# what merely spells `supabase` — a wiring token names the component, not this
+# baseline.
 #
 # The identity is PINNED (fixtures/baseline-identity.supabase-starter.json) rather
 # than read from .baseline/identity.json: what this tests is the engine, and
@@ -72,6 +73,10 @@ check "the worker name is re-prefixed, the environment suffix kept" \
 check "the Worker's own origin: worker name and subdomain" \
   "$acme" intent.yaml '    url: https://supabase-starter-web-stage.your-workers-subdomain.workers.dev' \
   '    url: https://acme-notes-web-stage.acme.workers.dev'
+check "the product's own origin the build bakes in when SITE_URL is unset" \
+  "$acme" apps/web/component.yaml \
+  '    buildCommand: pnpm build && NEXT_PUBLIC_SITE_URL="${SITE_URL:-https://supabase-starter-web-${ORUN_ENVIRONMENT}.your-workers-subdomain.workers.dev}"' \
+  '    buildCommand: pnpm build && NEXT_PUBLIC_SITE_URL="${SITE_URL:-https://acme-notes-web-${ORUN_ENVIRONMENT}.acme.workers.dev}"'
 check "the subdomain the Supabase project's Auth Site URL is built from" \
   "$acme" infra/terraform/supabase/component.yaml '    workersDevSubdomain: your-workers-subdomain' \
   '    workersDevSubdomain: acme'
@@ -106,10 +111,6 @@ check "a wiring token names the component, not the baseline" \
 check "the upstream example's home is upstream's" \
   "$acme" README.md '[Next.js and Supabase Starter](https://github.com/vercel/next.js/tree/canary/examples/with-supabase)' \
   '[Next.js and Supabase Starter](https://github.com/vercel/next.js/tree/canary/examples/with-supabase)'
-check "…and so is its Deploy to Vercel link, every parameter of it" \
-  "$acme" apps/web/components/deploy-button.tsx \
-  'href="https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&project-name=nextjs-with-supabase&demo-url=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2F"' \
-  'href="https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&project-name=nextjs-with-supabase&demo-url=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2F"'
 
 echo "── rebrand: a written value is not rewritten, in any later pass"
 contains='{"reponame":"supabase-starter-2","productname":"Next.js Supabase Starter 2","productdomain":"supabase-starter.example.com.au","githuborg":"sourceplane","subdomain":"your-workers-subdomain-2"}'
@@ -156,7 +157,7 @@ verify "a leftover worker name fails" \
 verify "a leftover code identifier fails (no rule renames it — so nothing may spell it)" \
   "$acme" apps/web/app/x.ts 'export class SupabaseStarter {}' fail --values
 verify "the upstream example's links are not residue" \
-  "$acme" apps/web/README.md 'the [example](https://github.com/vercel/next.js/tree/canary/examples/with-supabase) and its demo-nextjs-with-supabase.vercel.app' pass --values
+  "$acme" apps/web/README.md 'the [example](https://github.com/vercel/next.js/tree/canary/examples/with-supabase)' pass --values
 verify "a clean product passes" \
   "$acme" package.json '"name": "acme-notes"' pass --values
 

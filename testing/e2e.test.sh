@@ -30,8 +30,10 @@
 #      the product promises: the pages carry the product's name, the auth
 #      pages render, `/protected` and every other guarded path send a
 #      signed-out visitor to the login page, `/api/health` (answered only by
-#      the Worker) says how sign-up behaves, and the email-confirm route
-#      refuses a bad link with the error page, not a 500;
+#      the Worker) says how sign-up behaves, the email-confirm route refuses
+#      a bad link with the error page, not a 500, and the home page's
+#      og:image and twitter:image name the product's own origin — with no
+#      "Deploy to Vercel" anywhere;
 #   5. the user flow: a visitor signs up and is signed in at once, the Worker
 #      reads the session from the cookies @supabase/ssr wrote and renders the
 #      protected page with their claims; a forged session is refused; a wrong
@@ -347,8 +349,20 @@ for want in ('href="/auth/login"', 'href="/auth/sign-up"', "Sign up your first u
         bad(f"the signed-out home page has no {want}")
 if "Supabase environment variables required" in home:
     bad("the home page says the Supabase variables are missing — the build did not inline them")
-if "vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase" not in html.unescape(home):
-    bad("the header's Deploy to Vercel link to the upstream example is gone")
+if "Deploy to Vercel" in text(home) or "vercel.com/new/clone" in html.unescape(home):
+    bad("the home page still offers to deploy the upstream example to Vercel")
+# The image links are absolute, and on the product's OWN origin — the stage
+# Worker this build was made for (SITE_URL unset), the one the Supabase
+# project's Auth is given — not localhost, not Vercel's.
+origin = f"https://{values['reponame']}-web-stage.{values['subdomain']}.workers.dev"
+for attr, key, image in (("property", "og:image", "opengraph-image.png"), ("name", "twitter:image", "twitter-image.png")):
+    tags = re.findall(r'<meta ' + attr + r'="' + re.escape(key) + r'" content="([^"]+)"', home)
+    if not tags or not all(html.unescape(t).startswith(f"{origin}/{image}") for t in tags):
+        bad(f"the home page's {key} is {tags}, not {origin}/{image}")
+    else:
+        s, _, _ = req("/" + image)
+        if s != 200:
+            bad(f"/{image}, which {key} names, answered {s}")
 
 PAGES = {
     "/auth/login": "Enter your email below to login to your account",
@@ -368,9 +382,6 @@ for path in ("/protected", "/no-such-page"):
     s, h, _ = req(path)
     if s != 307 or location(h)[0] != "/auth/login":
         bad(f"{path} signed out answered {s} → {h.get('location')}, not 307 → /auth/login")
-s, _, img = req("/opengraph-image.png")
-if s != 200:
-    bad(f"/opengraph-image.png answered {s}")
 
 # ── what only the Worker answers ──────────────────────────────────────────
 def health():
@@ -468,9 +479,10 @@ if problems:
         print(f"  ✕ {p}", file=sys.stderr)
     sys.exit(1)
 print(f"   /, the six auth pages, the guard on /protected and every other path, /api/health, "
-      f"/auth/confirm's refusals; a sign-up signed straight in, the protected page from the session "
-      f"cookies, a forged session refused, a sign-in; with confirmation on, the emailed link through "
-      f"/auth/confirm; members-only email refused with its code — as {name!r}")
+      f"/auth/confirm's refusals; og:image and twitter:image on {origin}, no Deploy to Vercel; "
+      f"a sign-up signed straight in, the protected page from the session cookies, a forged session "
+      f"refused, a sign-in; with confirmation on, the emailed link through /auth/confirm; "
+      f"members-only email refused with its code — as {name!r}")
 PY
 
 # ── 6. the tutorial's table, as the SQL editor runs it ─────────────────────

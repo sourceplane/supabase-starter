@@ -9,7 +9,8 @@ the code departed from `design.md` or from the upstream template.
 | SS1 — the starter on Workers | ✅ Shipped | [#2](https://github.com/sourceplane/supabase-starter/pull/2) |
 | SS2 — the Supabase project from Terraform | ✅ Shipped (validated; apply gated on a linked workspace) | [#3](https://github.com/sourceplane/supabase-starter/pull/3) |
 | SS3 — ready to instantiate | ✅ Shipped | [#4](https://github.com/sourceplane/supabase-starter/pull/4) |
-| SS4 — a baseline | 🔄 In review (SS-5) | this branch, `claude/blissful-ptolemy-c5ajf8` |
+| SS4 — a baseline | ✅ Shipped, tagged `baseline-v1` | [#5](https://github.com/sourceplane/supabase-starter/pull/5) |
+| SS5 — the product's own origin | 🔄 In review (SS-6) | this branch, `claude/blissful-ptolemy-c5ajf8` |
 
 ## Departures from the upstream template
 
@@ -149,3 +150,41 @@ check`; `terraform fmt`, `init -backend=false` and `validate` on the root.
 Not verified: a Terraform apply (so neither the brokered OAuth token's reach
 to the API-keys and Auth-config endpoints nor `ACTIVE_HEALTHY` polling), a
 live deploy, a live bootstrap, and real email delivery (SS-I).
+
+## SS5 — the product's own origin (SS-6)
+
+Two defects `baseline-v1` shipped in every product:
+
+- **The image links named localhost.** `app/layout.tsx` built `metadataBase`
+  from `VERCEL_URL`, which no Cloudflare build has, so `og:image` and
+  `twitter:image` on every deployed page were `http://localhost:3000/…`.
+  `metadataBase` is now `NEXT_PUBLIC_SITE_URL`, which `component.yaml`'s
+  buildCommand bakes in: the environment's `SITE_URL` when `intent.yaml` sets
+  one, else `https://<repo>-web-<env>.<subdomain>.workers.dev` — written out
+  in the command (the rename rewrites the worker name and the subdomain),
+  because the composition exports `WORKERS_DEV_SUBDOMAIN` to the smoke step
+  only. Baked at build rather than read from the request (`headers()` in
+  `generateMetadata`), because the pages are prerendered (`cacheComponents`):
+  a request-time origin would have made every static page dynamic.
+- **The header offered "Deploy to Vercel"**, cloning upstream's example to
+  Vercel. `components/deploy-button.tsx` is gone, and so is its use in the
+  home page and the protected layout. The tutorial's Vercel-only step
+  (`sign-up-user-steps.tsx`, shown only when `VERCEL_ENV` is set) never
+  renders on Cloudflare and is left as upstream wrote it.
+
+One origin, one setting: the supabase root reads the same `SITE_URL` (the
+runner exports an environment's `env:` to every job of it) and makes it
+Auth's Site URL and redirect allow-list, falling back to the same workers.dev
+URL — so a custom domain is `SITE_URL` plus a redeploy of both components.
+The rename's upstream list drops the deploy link and the demo URL, which
+nothing in the tree carries any more.
+
+### Verified (SS5)
+
+The repository's checks; `testing/rebrand.test.sh`, `leak.test.sh` and
+`placement.test.sh` (the product's build bakes its own origin, Auth's Site
+URL follows SITE_URL, no Vercel clone link in the app); `e2e.test.sh` at
+v2.78.4, which now asserts the served home page's `og:image` and
+`twitter:image` start with the stage Worker's origin, that both images are
+served, and that no "Deploy to Vercel" appears; `terraform validate` on the
+root, and the origin it computes with and without `SITE_URL`.

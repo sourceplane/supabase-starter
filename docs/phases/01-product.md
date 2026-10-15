@@ -54,14 +54,15 @@ main and reads the order off it: `supabase → web`.
    org `SUPABASE_ORG_ID` names, with a generated database password; then,
    once the project reports `ACTIVE_HEALTHY`, its API keys are read and its
    Auth is set — Site URL and redirect allow-list
-   `https://<reponame>-web-<env>.<subdomain>.workers.dev`, email
-   confirmation off. Its outputs are lease-published as `WIRING_SUPABASE`
+   `https://<reponame>-web-<env>.<subdomain>.workers.dev` (or the
+   environment's `SITE_URL`), email confirmation off. Its outputs are lease-published as `WIRING_SUPABASE`
    (the URL and the publishable key), `SUPABASE_PROJECT_REF`,
    `SUPABASE_DB_PASSWORD` and `SUPABASE_DB_URL`. A new project takes five to
    seven minutes to come up.
 2. **web** — installs, re-renders `wrangler.jsonc` from this environment's
    wiring document, builds with OpenNext (`next build` inlines the same URL
-   and key into the browser bundle), deploys `<reponame>-web-<env>`, and
+   and key into the browser bundle, and the same origin Auth was given into
+   the pages' absolute image links), deploys `<reponame>-web-<env>`, and
    smoke-tests it: the home page, and `/api/health`, which answers only when
    the project's Auth answers the key the build inlined.
 

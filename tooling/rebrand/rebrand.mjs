@@ -11,8 +11,8 @@
 // project's Auth Site URL is built from too) — to the values in a values
 // file, and leaves *org-owned* identity alone (the orun state backend, the
 // `sourceplane.io` manifest apiVersion, company mailboxes) and the UPSTREAM
-// template's own links (the Next.js example, its demo, its Vercel deploy
-// button: they name where the code came from, not this product).
+// template's own links (the Next.js example the code came from: it names
+// where the code came from, not this product).
 //
 // The engine is Cirrus's (sourceplane/cirrus-baseline tooling/rebrand): the
 // FROM side declared in `.baseline/identity.json`, every written value held
@@ -204,21 +204,19 @@ function trackedFiles() {
 
 // ── The upstream template's identity (never rewritten) ─────────
 //
-// This tree IS Vercel's `with-supabase` example. Where the code names its
-// upstream — the header's "Deploy to Vercel" button, the tutorial's links,
-// the app's README — it points at the example's own home, its demo and its
-// deploy page, which a product's visitors may follow. None spells this
-// baseline's slug today; they are protected all the same, so a rule written
-// later cannot point them at a repository that does not exist, and they are
-// allowed by the leftover sweep.
+// This tree IS Vercel's `with-supabase` example. Where the docs name its
+// upstream — the READMEs' first line — they point at the example's own home.
+// It does not spell this baseline's slug; it is protected all the same, so a
+// rule written later cannot point it at a repository that does not exist, and
+// it is allowed by the leftover sweep. (The header's "Deploy to Vercel" button,
+// which cloned the example to Vercel, is gone: a product on Cloudflare does not
+// offer its visitors that.)
 //
-// ENCLOSING FIRST: the masks are taken in this order and put back in it, so a
-// link that CONTAINS another (the deploy link names the demo) must be masked
-// whole before the one inside it is looked for.
+// ENCLOSING FIRST, should a second link ever join this list: the masks are
+// taken in this order and put back in it, so a link that CONTAINS another
+// must be masked whole before the one inside it is looked for.
 const UPSTREAM = [
-  /vercel\.com\/new\/clone\?[^\s"')]+/g, // the "Deploy to Vercel" link, every parameter of it
   /github\.com\/vercel\/next\.js\/tree\/canary\/examples\/with-supabase\b/g, // the example's home
-  /demo-nextjs-with-supabase\.vercel\.app/g, // its demo
 ];
 
 // ── Protected literals (org-owned identity, never rewritten) ───

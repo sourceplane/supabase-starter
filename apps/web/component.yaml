@@ -84,7 +84,15 @@ spec:
     # tree, from this environment's wiring document, so the Worker's vars and
     # the URL and key `next build` inlines are the real project's; dev
     # verifies with the fixture and has no wiring.
-    buildCommand: if [ "${ORUN_ENVIRONMENT}" != dev ]; then node ../../tooling/wire/live.mjs --template wrangler.template.jsonc --out wrangler.jsonc --components supabase --env "${ORUN_ENVIRONMENT}"; fi && pnpm exec turbo run build --filter=@app/web
+    #
+    # The product's public origin (the Open Graph and Twitter image links are
+    # absolute): the environment's SITE_URL when intent.yaml sets one (a
+    # custom domain), else its workers.dev URL — the same origin the supabase
+    # root gives the project's Auth as its Site URL. The subdomain is written
+    # out rather than read from ${WORKERS_DEV_SUBDOMAIN}: the composition
+    # exports that to the smoke step only, so the build would see it empty.
+    # ${ORUN_ENVIRONMENT} the runner sets for every step.
+    buildCommand: if [ "${ORUN_ENVIRONMENT}" != dev ]; then node ../../tooling/wire/live.mjs --template wrangler.template.jsonc --out wrangler.jsonc --components supabase --env "${ORUN_ENVIRONMENT}"; fi && NEXT_PUBLIC_SITE_URL="${SITE_URL:-https://supabase-starter-web-${ORUN_ENVIRONMENT}.your-workers-subdomain.workers.dev}" pnpm exec turbo run build --filter=@app/web
 
     # Smoke: the home page renders, signed-out header included, and
     # /api/health answers ok — the project's Auth reachable with the key this

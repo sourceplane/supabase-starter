@@ -149,10 +149,12 @@ orun new --blueprint repo-blueprint.yaml \
 - **Tables**: the protected page's tutorial creates `notes` with row-level
   security on and per-user policies. Every table in `public` needs RLS —
   the publishable key is public by design.
-- **Custom domain**: attach it to the Worker in Cloudflare, then make it
-  prod's Auth Site URL in the product's supabase root (its README, "Custom
-  domain"). There is no domain phase: attaching a domain needs zone
-  permissions the brokered `workers-deploy` token does not carry.
+- **Custom domain**: attach it to the Worker in Cloudflare, then set
+  `SITE_URL` under the environment's `env:` in the product's `intent.yaml` —
+  the app's absolute links and the project's Auth Site URL both follow it —
+  and redeploy web and supabase (the product's README, "Custom domain").
+  There is no domain phase: attaching a domain needs zone permissions the
+  brokered `workers-deploy` token does not carry.
 - **Refresh the record**: re-run `--phase 02-docs`; it is idempotent, and it
   records whether sign-up asks for confirmation.
 
