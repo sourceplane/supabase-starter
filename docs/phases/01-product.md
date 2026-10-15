@@ -1,0 +1,112 @@
+# 01-product — the product, in one landing
+
+The whole product lands as ONE pull request, and ONE convergence on main
+provisions and deploys it on stage and prod: the Supabase project, its Auth
+pointed at the app, and then the app — in that order, per environment.
+
+**Places** every module `repo-blueprint.yaml` declares: the root manifests,
+CI, tooling and identity; the discovery roots; `infra/terraform/supabase`;
+`apps/web`; and `tests/web`. `testing/phases.test.sh` holds the set.
+
+**Requires** three live connections, probed and waited for (up to ten
+minutes, so a consent can be clicked while it waits): the GitHub App on the
+account that OWNS the repository — the platform sees a PR only through that
+installation — and Cloudflare and Supabase, which every credential below is
+minted from. The Supabase organization needs room for **two** projects,
+`<reponame>-stage` and `<reponame>-prod` — the free plan's limit.
+
+## How one convergence keeps the order
+
+| what has to come first | how the plan holds it |
+|---|---|
+| the Supabase project before the app | `web` builds with the project's URL and publishable key (`WIRING_SUPABASE_<ENV>`, which the `supabase` apply lease-publishes), and declares `dependsOn: supabase`, `mode: enforced` on main. A job resolves its secrets when it STARTS, so the document is there |
+| the project's Auth before anyone signs up | the same apply sets the project's Site URL and redirect allow-list to the Worker and turns email confirmation off, after the project reports healthy |
+| stage before prod | deferred during the bootstrap (below), so both environments run their chains side by side |
+
+The edge is **advisory on a pull request**, which applies and deploys
+nothing. `testing/placement.test.sh` plans the placed product's own push to
+main and reads the order off it: `supabase → web`.
+
+## What runs
+
+| hook | what it does |
+|---|---|
+| `task` (pre) | finds the phase's task and yields its key |
+| `retouch` | one trailing `# orun: redeploy 01-product <stamp>` line in each component `.baseline/tasks/01-product.TaskContract.yaml` names (supabase, web), so a RE-RUN has a diff to land |
+| `git-init`, `stage` | the tree becomes a git repository with a populated index (the rebrand enumerates `git ls-files`) |
+| `rebrand` | renames the baseline's identity to the product's: the slug (intent, worker, secret project, the `repo` the Supabase project is named after), the name seam, the domain, the workers.dev subdomain (the Worker's URL and the project's Auth Site URL). The upstream template's own links are left alone |
+| `orun-workspace` | writes the product's workspace into `intent.yaml` |
+| `work-tree` | strips this repository's `work:` block from the product's intent |
+| `promotion`, `dev-lanes` | defer prod's wait on stage and dev's push lanes until `02-docs` |
+| `restage`, `rebrand-verify` | the sweep: no baseline identity left |
+| `pnpm-lockfile` | confirms the complete lockfile `root-pnpm-lock` placed |
+| `repo` | `orun.repo/ensure@v1`: creates (or finds) `<githuborg>/<reponame>` |
+| `link` | the repository becomes the workspace's (`orun cloud link`, best effort; `orun cloud check` is the gate). Every convergence lane authenticates over GitHub OIDC through that link |
+| `secret-*` | four `orun.integrations/reconcile@v1` hooks, one key and one scope each: `CLOUDFLARE_API_TOKEN` (workers-deploy), `CLOUDFLARE_ACCOUNT_ID` (account-id), `SUPABASE_ACCESS_TOKEN` (management-access), `SUPABASE_ORG_ID` (org-id). Keys that exist are kept |
+| `land` | one PR, checked (Checks, and `plan` alone on a bootstrap branch), then merged |
+| `converge` (await) | `orun.run/watch@v1` on the merge commit's run; resumes it up to three times |
+| `wiring` (await) | `orun.secrets/exists@v1`: `WIRING_SUPABASE`, `SUPABASE_PROJECT_REF`, `SUPABASE_DB_PASSWORD` and `SUPABASE_DB_URL` on stage and prod |
+| `verify` (await) | `orun.http/probe@v1`: `/` and `/api/health` on both workers.dev URLs |
+
+## What the convergence does, per environment
+
+1. **supabase** — `terraform apply`: one project, `<reponame>-<env>`, in the
+   org `SUPABASE_ORG_ID` names, with a generated database password; then,
+   once the project reports `ACTIVE_HEALTHY`, its API keys are read and its
+   Auth is set — Site URL and redirect allow-list
+   `https://<reponame>-web-<env>.<subdomain>.workers.dev`, email
+   confirmation off. Its outputs are lease-published as `WIRING_SUPABASE`
+   (the URL and the publishable key), `SUPABASE_PROJECT_REF`,
+   `SUPABASE_DB_PASSWORD` and `SUPABASE_DB_URL`. A new project takes five to
+   seven minutes to come up.
+2. **web** — installs, re-renders `wrangler.jsonc` from this environment's
+   wiring document, builds with OpenNext (`next build` inlines the same URL
+   and key into the browser bundle), deploys `<reponame>-web-<env>`, and
+   smoke-tests it: the home page, and `/api/health`, which answers only when
+   the project's Auth answers the key the build inlined.
+
+No SMTP server is in it: sign-up works without one, because confirmation is
+off. The owner turns it on later (the product's README, "Email").
+
+## Verify / done means
+
+- The convergence for the merge commit is green on stage and prod.
+- The four published secrets exist on stage and prod.
+- `/` and `/api/health` answer on both workers.dev URLs.
+
+## Failure modes
+
+| symptom | meaning → fix |
+|---|---|
+| parks on the `providers` probe | a connection is missing — GitHub on the repository's owner, Cloudflare, or Supabase. Connect it (console → Integrations); the probe is a wait, not a failure |
+| supabase apply: project limit reached | the organization has no room for two more projects (the free plan allows two active ones). Pause or delete one, or upgrade, then re-run the phase |
+| supabase apply: `does not support oauth access` | the provider is above 1.5.x, which reads billing endpoints an OAuth token cannot — `~> 1.5.1` is pinned for this reason |
+| supabase apply: `Unable to read API keys` or `Unable to update auth settings` (401/403) | the Supabase connection's grant does not reach the project's API keys or its Auth configuration. Reconnect Supabase with a personal access token (console → Integrations → Supabase), or set the Site URL by hand and remove `supabase_settings` — then re-run |
+| supabase apply: the project never reports `ACTIVE_HEALTHY` | the project is still coming up after ten minutes, or failed to. Its state is in the Supabase dashboard; re-run the phase once it is healthy (the project is adopted, not recreated) |
+| supabase apply: project name already exists | `adopt.tf` looks the project up by name and imports it — if you removed that file, restore it |
+| web: `wire: missing wiring documents … WIRING_SUPABASE_<ENV>` | the supabase apply for that environment did not publish — read its log; web waits on it, so it shows as not run |
+| web smoke: `/api/health` 503 | `auth: key refused` — the key the build inlined is not the project's (a stale wiring document); `auth: unreachable` — the project is paused or the URL is wrong |
+| `build-app` fails: `Symlink apps/web/node_modules/next is invalid, it points out of the filesystem root` | the product's intent pins stack-tectonic ≥ 0.20.0 (lane-scoped install), which Next 16's Turbopack refuses. Pin 0.19.0 — `intent.yaml` says why |
+| `verify-app-structure` fails: `test -f wrangler.jsonc` | `apps/web/wrangler.jsonc` is not committed. It must be: the check runs before the build, in a fresh checkout (`pnpm run wire:fixture` renders it) |
+| the watch says green, the probe says 404 | another workflow ran on the push and the watch took its run. Only `ci.yml` may run on a push to main |
+| re-run lands nothing | the hooks did not run (`--run-hooks`), or the contract names no component — `node tooling/bootstrap/retouch.mjs --check --affects .baseline/tasks/01-product.TaskContract.yaml` in the product's tree says which |
+
+## Re-running
+
+Idempotent: placement is additive, the rebrand is a no-op on branded files,
+`git init` and the repo step are guarded, and the Supabase project is
+adopted rather than recreated. A re-run of a phase whose PR already merged
+lands the retouch markers alone, which re-plans exactly the components they
+name. Once the tree is branded the phase derives as `drifted`, so `--resume`
+leaves it alone; re-run it deliberately with `--phase 01-product` (or
+`--redo 01-product`).
+
+## What one convergence will run, before running it
+
+From a placed product's tree:
+
+```bash
+node <baseline>/tooling/bootstrap/promotion.mjs --defer && node <baseline>/tooling/bootstrap/dev-lanes.mjs --defer
+orun plan --intent intent.yaml --trigger github-push-main -v lanes
+git checkout intent.yaml
+```

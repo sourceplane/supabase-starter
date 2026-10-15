@@ -12,14 +12,29 @@ spec:
   # Its own lane per environment: the Next.js build is the longest job in the
   # plan, and a shared lane would wait on it.
   lane: isolated
-  # The Supabase project must exist before this deploys: its URL and
-  # publishable key are read at build time (NEXT_PUBLIC_* are inlined) and
-  # rendered into wrangler vars for the Worker.
+  # INFRA BEFORE APP, ENFORCED ON MAIN. A merge to main converges the whole
+  # product in one run: the Supabase project, then this Worker. Its build
+  # reads the project's URL and publishable key (WIRING_SUPABASE_<ENV>,
+  # rendered into wrangler.jsonc and inlined by `next build`), and a job
+  # resolves its secrets when it STARTS — so it waits on the apply,
+  # `mode: enforced`, and the document the apply lease-published is there. A
+  # pull request deploys nothing, so nothing on one waits: the edge is
+  # advisory there.
   dependsOn:
     - component: supabase
-  secretEnv:
-    NEXT_PUBLIC_SUPABASE_URL: "secret://supabase-starter/supabase-starter/{{ .environment }}/SUPABASE_URL"
-    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "secret://supabase-starter/supabase-starter/{{ .environment }}/SUPABASE_ANON_KEY"
+      mode: enforced
+      modeRules:
+        - mode: advisory
+          when:
+            triggerRef: github-pull-request
+  # The wiring documents the supabase root lease-publishes, one per deployed
+  # environment; tooling/wire/live.mjs picks this job's and fails loudly when
+  # it is not there. OPTIONAL references, so a job resolves the ones that
+  # exist: stage's deploy waits on stage's apply only, and while the bootstrap
+  # runs stage and prod side by side, prod's document may not be published yet
+  # when stage's deploy starts (a required reference would fail that job). The
+  # dev verify lane renders nothing and reads neither.
+  optionalSecretEnv:
     WIRING_SUPABASE_STAGE: "secret://supabase-starter/supabase-starter/stage/WIRING_SUPABASE"
     WIRING_SUPABASE_PROD: "secret://supabase-starter/supabase-starter/prod/WIRING_SUPABASE"
   subscribe:
@@ -58,17 +73,24 @@ spec:
     environmentAwareWorkerName: true
 
     # The account's workers.dev subdomain; exported to the smoke step as
-    # ${WORKERS_DEV_SUBDOMAIN} and used to build ${DEPLOYED_URL}.
+    # ${WORKERS_DEV_SUBDOMAIN} and used to build ${DEPLOYED_URL}. The supabase
+    # root carries the same value: Auth's Site URL is this Worker.
     workersDevSubdomain: your-workers-subdomain
 
     installCommand: pnpm install --frozen-lockfile
-    # Render this environment's wrangler config from the wiring document, then
-    # build (the verify lane already rendered from the fixture through
-    # `wire:fixture`; a deploy lane re-renders with the real values).
-    buildCommand: node ../../tooling/wire/live.mjs --template wrangler.template.jsonc --out wrangler.jsonc --components supabase --env "${ORUN_ENVIRONMENT}" && pnpm exec turbo run build --filter=@app/web
+    # wrangler.jsonc is COMMITTED — the fixture render, so the composition's
+    # structure check (`test -f wrangler.jsonc`, before the build, in a fresh
+    # checkout) passes. Stage and prod re-render it here, in their own job
+    # tree, from this environment's wiring document, so the Worker's vars and
+    # the URL and key `next build` inlines are the real project's; dev
+    # verifies with the fixture and has no wiring.
+    buildCommand: if [ "${ORUN_ENVIRONMENT}" != dev ]; then node ../../tooling/wire/live.mjs --template wrangler.template.jsonc --out wrangler.jsonc --components supabase --env "${ORUN_ENVIRONMENT}"; fi && pnpm exec turbo run build --filter=@app/web
 
-    # Smoke: the home page renders and carries the app's marker text.
-    smokeCommand: "html=$(curl -sfL \"${DEPLOYED_URL}/\") && echo \"${html}\" | grep -q 'Next.js and Supabase Starter Kit'"
+    # Smoke: the home page renders, signed-out header included, and
+    # /api/health answers ok — the project's Auth reachable with the key this
+    # build inlined. Each response is buffered before grep so an early match
+    # cannot SIGPIPE curl.
+    smokeCommand: "html=$(curl -sfL \"${DEPLOYED_URL}/\") && echo \"${html}\" | grep -q 'href=\"/auth/sign-up\"' && health=$(curl -sf \"${DEPLOYED_URL}/api/health\") && echo \"${health}\" | grep -q '\"ok\":true'"
   labels:
     team: platform
     layer: delivery

@@ -1,0 +1,37 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: SS-5
+  title: "A baseline"
+spec:
+  goal: The repository is an Orun baseline on the Lumen conventions — a card and a build document that take a new product from nothing to live on stage and prod in one landing (the Supabase project, then the app), branded as its own, with sign-up working on the first deploy and no SMTP server, the tutorial's table under row-level security, and gates that prove it offline
+  affects:
+    - blueprint.yaml
+    - repo-blueprint.yaml
+    - BOOTSTRAP.md
+    - README.md
+    - .baseline/**
+    - tooling/rebrand/**
+    - tooling/bootstrap/**
+    - hooks/**
+    - testing/**
+    - docs/phases/**
+    - ai/context/**
+    - .github/workflows/**
+    - .gitignore
+    - intent.yaml
+    - packages/.gitkeep
+    - apps/web/**
+    - infra/**
+    - tests/web/**
+    - pnpm-lock.yaml
+    - specs/**
+    - tasks/**
+  doneWhen:
+    - orun (the bootstrap floor, the lane pin and 2.79.0) reads repo-blueprint.yaml, and the card agrees with it
+    - the product's own push-to-main plan orders supabase → web, enforced, and a pull request's plan holds the edge advisory
+    - the supabase root publishes WIRING_SUPABASE (URL and publishable key) beside Lumen's three, and sets the project's Auth Site URL to the Worker with email confirmation off
+    - a product built offline builds in the job tree orun stages with the stage wiring inlined, serves, and signs a user up and in against a local Supabase stand-in; the tutorial's table admits each user to their own rows only
+    - the as-built status records the departures and what is not yet proven live
+  gates:
+    - checks
