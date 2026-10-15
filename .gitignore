@@ -11,6 +11,7 @@ coverage/
 .env*.local
 .dev.vars
 .dev.vars.*
+!.dev.vars.example
 *.log
 plan.json
 next-env.d.ts
@@ -26,6 +27,3 @@ crash.log
 **/.orun/runs/
 **/.orun/
 
-# Rendered wrangler configs for wiring-templated deployables (committed as
-# wrangler.template.jsonc; rendered by tooling/wire at verify/deploy time).
-apps/web/wrangler.jsonc

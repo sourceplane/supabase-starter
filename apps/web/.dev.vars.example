@@ -1,0 +1,15 @@
+# Local overrides for `wrangler dev` / `opennextjs-cloudflare preview`.
+# Copy to .dev.vars (git-ignored). Optional: without it the Worker uses the
+# committed wrangler.jsonc's vars, the offline fixture — a project that does
+# not exist, so sign-in says the service did not answer.
+#
+# Your Supabase project (dashboard → Project Settings → API). The deployed
+# Worker gets these as wrangler vars, rendered per environment from the
+# supabase root's wiring document; they are not secrets — the publishable key
+# ships to every browser, and Row Level Security protects the data.
+#
+# NOTE: `next build` inlines the browser's copy of these from apps/web/.env.local
+# (or, without one, from wrangler.jsonc), not from this file — set both, to the
+# same project, before `pnpm build`.
+# NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
+# NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_…

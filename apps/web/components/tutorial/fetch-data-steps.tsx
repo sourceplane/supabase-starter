@@ -3,20 +3,28 @@ import { CodeBlock } from "./code-block";
 
 const create = `create table notes (
   id bigserial primary key,
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
   title text
 );
 
-insert into notes(title)
-values
-  ('Today I created a Supabase project.'),
-  ('I added some data and queried it from Next.js.'),
-  ('It was awesome!');
+alter table notes enable row level security;
+
+insert into notes (user_id, title)
+select users.id, v.title
+from auth.users,
+  (values
+    ('Today I created a Supabase project.'),
+    ('I added some data and queried it from Next.js.'),
+    ('It was awesome!')) as v(title);
 `.trim();
 
-const rls = `alter table notes enable row level security;
-create policy "Allow public read access" on notes
-for select
-using (true);`.trim();
+const rls = `create policy "Users read their own notes" on notes
+for select to authenticated
+using ((select auth.uid()) = user_id);
+
+create policy "Users add their own notes" on notes
+for insert to authenticated
+with check ((select auth.uid()) = user_id);`.trim();
 
 const server = `import { createClient } from '@/lib/supabase/server'
 
@@ -74,16 +82,18 @@ export function FetchDataSteps() {
           >
             SQL Editor
           </a>{" "}
-          and click RUN!
+          and click RUN! It gives every user who has signed up so far three
+          notes of their own.
         </p>
         <CodeBlock code={create} />
       </TutorialStep>
 
       <TutorialStep title="Enable Row Level Security (RLS)">
         <p>
-          Supabase enables Row Level Security (RLS) by default. To query data
-          from your <code>notes</code> table, you need to add a policy. You can
-          do this in the{" "}
+          The table is created with Row Level Security (RLS) on, so nobody can
+          read it through Supabase&apos;s API until a policy allows it. To query
+          data from your <code>notes</code> table, you need to add a policy. You
+          can do this in the{" "}
           <a
             href="https://supabase.com/dashboard/project/_/editor"
             className="font-bold hover:underline text-foreground/80"
@@ -104,8 +114,8 @@ export function FetchDataSteps() {
           .
         </p>
         <p>
-          For example, you can run the following SQL to allow public read
-          access:
+          For example, you can run the following SQL to let each signed-in user
+          read and add their own notes, and nobody else&apos;s:
         </p>
         <CodeBlock code={rls} />
         <p>
