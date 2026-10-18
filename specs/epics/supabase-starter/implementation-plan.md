@@ -112,8 +112,9 @@ product itself changing.
   (`baseline-v2`) are shipped and tagged.
 
 **Done when**
-- `git grep -i kiox` finds nothing, and the leak gate and the offline
-  bootstrap pass without the two modules
+- nothing outside this milestone's own record names kiox (`git grep -i
+  kiox`), and the leak gate and the offline bootstrap pass without the two
+  modules
 - the docs check is green in Baseline CI
 - this file, the status file and `epic.yaml` agree
 
