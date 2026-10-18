@@ -42,7 +42,7 @@ README (run, test, preview, deploy, the Supabase auth redirect URL),
 - the README quick start works from a fresh clone with a `.env.local`
 - the status file lists every PR and departure
 
-## SS4 — a baseline
+## SS4 — a baseline ✅
 
 The repository becomes an Orun baseline on the Lumen conventions, built the
 way cirrus-baseline v22 builds a product — in ONE landing:
@@ -71,6 +71,51 @@ way cirrus-baseline v22 builds a product — in ONE landing:
 - the e2e tier builds in the job tree orun stages with the stage wiring
   inlined, and signs a user up and in against a local Supabase stand-in; the
   tutorial's table admits each user to their own rows only
+
+## SS5 — the product's own origin ✅
+
+Two defects `baseline-v1` shipped in every product, fixed:
+
+- `metadataBase` from `NEXT_PUBLIC_SITE_URL`, which the component's
+  buildCommand bakes in — the environment's `SITE_URL` when `intent.yaml`
+  sets one, else its workers.dev URL — instead of `VERCEL_URL`, which no
+  Cloudflare build has (every page's `og:image` and `twitter:image` named
+  `localhost:3000`);
+- the supabase root reads the same `SITE_URL` for Auth's Site URL and
+  redirect allow-list, so one setting moves both;
+- the Deploy to Vercel button (`components/deploy-button.tsx`) and its uses
+  in the home page and the protected layout are gone.
+
+**Done when**
+- the e2e tier asserts the served home page's `og:image` and `twitter:image`
+  start with the stage Worker's own origin, and that no page offers a Deploy
+  to Vercel button
+- `SITE_URL` under an environment's `env` is the single setting for the
+  app's absolute links and Auth's Site URL
+
+## SS6 — the cirrus standard ✅
+
+Bring the baseline to cirrus-baseline's standard, with nothing about the
+product itself changing.
+
+- **No kiox.** `kiox.yaml`/`kiox.lock` pinned an orun (v2.15.0) that nothing
+  ran: every workflow installs orun itself through `orun-action` with its own
+  `version:`. The files, their two modules and the rebrand's skip entry go.
+- **Component docs.** `tooling/catalog/gen-component-docs.py` writes each
+  component's `docs/overview.md`, `docs/architecture.md` and `docs/runbook.md`
+  from what the component declares, as cirrus-baseline's do; the pages ship
+  with the component. Baseline CI runs it with `--check`.
+- **The context pack.** `ai/context/current.md`, `decisions.md` and
+  `open-risks.md` beside the two pages a product ships with — this
+  repository's own, so no module places them.
+- **Status that agrees with the tags.** SS4 (`baseline-v1`) and SS5
+  (`baseline-v2`) are shipped and tagged.
+
+**Done when**
+- `git grep -i kiox` finds nothing, and the leak gate and the offline
+  bootstrap pass without the two modules
+- the docs check is green in Baseline CI
+- this file, the status file and `epic.yaml` agree
 
 ## Sequencing note
 
