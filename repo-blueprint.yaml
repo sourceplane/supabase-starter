@@ -56,7 +56,10 @@ inputs:
     description: >-
       The workers.dev subdomain of the Cloudflare account the app deploys
       into — its URLs, the Site URL and redirect allow-list the Supabase
-      project's Auth is given, the probes.
+      project's Auth is given, the probes. A console or `--from bst_…` build
+      gets it from the workspace's Cloudflare connection (blueprint.yaml
+      declares `from: connection.cloudflare.workersSubdomain`); pass it with
+      --set only for a hand-run build.
   repoPrivate:
     type: boolean
     default: true
