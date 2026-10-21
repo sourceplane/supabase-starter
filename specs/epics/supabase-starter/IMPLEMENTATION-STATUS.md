@@ -9,8 +9,9 @@ the code departed from `design.md` or from the upstream template.
 | SS1 — the starter on Workers | ✅ Shipped | [#2](https://github.com/sourceplane/supabase-starter/pull/2) |
 | SS2 — the Supabase project from Terraform | ✅ Shipped (validated; apply gated on a linked workspace) | [#3](https://github.com/sourceplane/supabase-starter/pull/3) |
 | SS3 — ready to instantiate | ✅ Shipped | [#4](https://github.com/sourceplane/supabase-starter/pull/4) |
-| SS4 — a baseline | ✅ Shipped, tagged `baseline-v1` | [#5](https://github.com/sourceplane/supabase-starter/pull/5) |
-| SS5 — the product's own origin | 🔄 In review (SS-6) | this branch, `claude/blissful-ptolemy-c5ajf8` |
+| SS4 — a baseline | ✅ Shipped | [#5](https://github.com/sourceplane/supabase-starter/pull/5) (SS-5), tagged `baseline-v1` |
+| SS5 — the product's own origin | ✅ Shipped | [#6](https://github.com/sourceplane/supabase-starter/pull/6) (SS-6), tagged `baseline-v2` |
+| SS6 — the cirrus standard | ✅ Shipped | SS-7 — on `main` after `baseline-v2`, not yet tagged |
 
 ## Departures from the upstream template
 
@@ -188,3 +189,39 @@ v2.78.4, which now asserts the served home page's `og:image` and
 `twitter:image` start with the stage Worker's origin, that both images are
 served, and that no "Deploy to Vercel" appears; `terraform validate` on the
 root, and the origin it computes with and without `SITE_URL`.
+
+## The cirrus standard (SS6)
+
+Nothing about the product changed. What changed is the baseline around it:
+
+| What | Before | After | Why |
+|---|---|---|---|
+| orun pin | `kiox.yaml` (v2.15.0) + `kiox.lock`, shipped to every product | gone; orun is pinned where it runs, the `orun-action` `version:` in each workflow | nothing ran the kiox pin, and it disagreed with the lanes (v2.78.4) |
+| `root-kiox`, `root-kiox-lock` modules | in `01-product` | removed (`testing/phases.test.sh` and the rebrand's skip list follow) | a product is placed with 105 − 2 + 9 = 112 files: no kiox, plus the docs below |
+| component docs | none | `apps/web/docs/`, `infra/terraform/supabase/docs/`, `tests/web/docs/` — `overview.md`, `architecture.md`, `runbook.md` | cirrus-baseline documents every component; the workspace Docs library renders `docs/` beside each `component.yaml` |
+| how the docs stay true | — | `tooling/catalog/gen-component-docs.py` derives them from the manifest, the Worker config, Terraform, migrations and package scripts; Baseline CI runs it with `--check` | a hand-written copy of a manifest drifts silently |
+| context pack | `operations.md`, `deployment.md` | plus `current.md`, `decisions.md`, `open-risks.md` | cirrus-baseline's shape; the three new pages are this repository's own and no module places them (the leak gate still allows exactly two) |
+| status | SS5 "in review"; SS4 without its ✅ in the plan, SS5 without a section | SS4 shipped and tagged `baseline-v1`, SS5 shipped and tagged `baseline-v2`, both in the plan | the tags existed; the documents had not caught up |
+
+## Verified (SS6)
+
+- `testing/{manifest,phases,coverage,rebrand,retouch,bootstrap-defer}.test.sh`
+  green; `gen-component-docs.py --check` green (3 components, 9 pages).
+- `testing/leak.test.sh` (v2.58.11): 112 files derived (105 − 2 kiox + 9
+  docs pages), 104 text files read; ai/context still exactly the two
+  declared pages; the generated pages name no factory path.
+- `testing/placement.test.sh` (v2.58.11): 112 files placed, both landings,
+  branded, re-tenanted; the product's own `orun plan` for the 01-product
+  merge holds supabase → web enforced on stage and prod; `--resume` changes
+  nothing.
+- `pnpm install --frozen-lockfile`, `wire:fixture`, `typecheck`, `lint`,
+  `test` (25 tests, 7 files), `build` green.
+- `testing/e2e.test.sh` (v2.78.4) green: the Checks sequence on the
+  01-product landing, the stage lane's planned steps in a staged job tree,
+  `wrangler dev` over the built Worker against the local Supabase stand-in —
+  the smoke, every route, sign-up and sign-in, the origin assertions, and
+  the tutorial's table under row-level security. Its Terraform step was
+  skipped (no terraform on PATH); `terraform fmt -check`, `init
+  -backend=false` and `validate` (1.15.3) on the root are green on their
+  own, the lock file unchanged.
+- `orun task check SS-7` complete.

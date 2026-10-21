@@ -46,7 +46,7 @@ if not phases:
     sys.exit("repo-blueprint.yaml declares no phases — this check has gone blind")
 
 PRODUCT = ["ai-deployment", "ai-operations", "discovery-roots", "github-workflows",
-           "rebrand-values", "root-gitignore", "root-intent", "root-kiox", "root-kiox-lock",
+           "rebrand-values", "root-gitignore", "root-intent",
            "root-package-json", "root-pnpm-lock", "root-pnpm-workspace", "root-readme",
            "root-turbo", "supabase", "tooling-eslint", "tooling-tsconfig", "tooling-wire",
            "vscode", "web", "web-tests"]
