@@ -18,8 +18,7 @@ environment), then records what went live (`02-docs`).
 
 | | |
 |---|---|
-| Latest tag | `baseline-v2` (SS5 — the product's own origin); `baseline-v1` is SS4 |
-| On `main` since | SS6 — the cirrus standard (no kiox, generated component docs, this context pack) |
+| Latest tag | `baseline-v3` (SS6 — the cirrus standard: no kiox, generated component docs, this context pack, and the console card reading `subdomain` from the Cloudflare connection); `baseline-v2` is SS5, `baseline-v1` is SS4 |
 | Proven live | No. Nothing has been applied against a real Supabase organization: no Terraform apply, no live deploy, no live bootstrap (risk SS-I). Everything short of the platform is proven offline in Baseline CI, against a local Supabase stand-in |
 
 ## Where to read
@@ -34,8 +33,7 @@ environment), then records what went live (`02-docs`).
 
 ## Next
 
-1. Bootstrap one product from the next tag against a workspace with a
+1. Bootstrap one product from `baseline-v3` against a workspace with a
    Supabase connection, and record its timings — the apply, the brokered
    token's reach to the API-keys and Auth-config endpoints, a sign-up on the
    first deploy (closes SS-I).
-2. Cut the next `baseline-vN` with `tag.yml` so the registry can pin SS6.

@@ -110,6 +110,12 @@ product itself changing.
   repository's own, so no module places them.
 - **Status that agrees with the tags.** SS4 (`baseline-v1`) and SS5
   (`baseline-v2`) are shipped and tagged.
+- **The subdomain from the Cloudflare connection (SS-8).** The card's
+  `subdomain` input declares `from: connection.cloudflare.workersSubdomain`,
+  as cirrus-baseline since `baseline-v23`: the console fills it from the
+  connection the build is bound to and renders no field; `manifest.test.sh`
+  accepts the source only while the card requires `cloudflare`. A hand-run
+  build still passes `--set subdomain`.
 
 **Done when**
 - nothing outside this milestone's own record names kiox (`git grep -i

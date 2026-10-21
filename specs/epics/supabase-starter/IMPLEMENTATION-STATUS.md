@@ -11,7 +11,7 @@ the code departed from `design.md` or from the upstream template.
 | SS3 — ready to instantiate | ✅ Shipped | [#4](https://github.com/sourceplane/supabase-starter/pull/4) |
 | SS4 — a baseline | ✅ Shipped | [#5](https://github.com/sourceplane/supabase-starter/pull/5) (SS-5), tagged `baseline-v1` |
 | SS5 — the product's own origin | ✅ Shipped | [#6](https://github.com/sourceplane/supabase-starter/pull/6) (SS-6), tagged `baseline-v2` |
-| SS6 — the cirrus standard | ✅ Shipped | SS-7 — on `main` after `baseline-v2`, not yet tagged |
+| SS6 — the cirrus standard | ✅ Shipped | [#7](https://github.com/sourceplane/supabase-starter/pull/7) (SS-7), [#8](https://github.com/sourceplane/supabase-starter/pull/8) (SS-8), tagged `baseline-v3` |
 
 ## Departures from the upstream template
 
@@ -202,6 +202,41 @@ Nothing about the product changed. What changed is the baseline around it:
 | how the docs stay true | — | `tooling/catalog/gen-component-docs.py` derives them from the manifest, the Worker config, Terraform, migrations and package scripts; Baseline CI runs it with `--check` | a hand-written copy of a manifest drifts silently |
 | context pack | `operations.md`, `deployment.md` | plus `current.md`, `decisions.md`, `open-risks.md` | cirrus-baseline's shape; the three new pages are this repository's own and no module places them (the leak gate still allows exactly two) |
 | status | SS5 "in review"; SS4 without its ✅ in the plan, SS5 without a section | SS4 shipped and tagged `baseline-v1`, SS5 shipped and tagged `baseline-v2`, both in the plan | the tags existed; the documents had not caught up |
+
+### The subdomain from the Cloudflare connection (SS-8)
+
+The console card's `subdomain` input was typed by hand, though it belongs to
+the Cloudflare account the same way its id does and has exactly one right
+answer. A wrong value surfaced only after deploy: in the Site URL and redirect
+allow-list the Supabase project's Auth is given, the smoke checks and the
+verify URLs. `blueprint.yaml` now declares
+`from: connection.cloudflare.workersSubdomain`, as cirrus-baseline does since
+`baseline-v23`: the Cloudflare integration reads the subdomain from the
+account at connect and on its hourly health check, and the bootstrap door
+fills the input from the connection the build is bound to — the same one
+`CLOUDFLARE_ACCOUNT_ID` and the deploy tokens mint from. The console renders
+no field for it, and an account with no workers.dev subdomain is refused at
+the door, naming the fix.
+
+- `testing/manifest.test.sh` takes cirrus-baseline's check: a
+  `connection.<provider>.<fact>` source is accepted, and only when the card's
+  `spec.requires.integrations` lists the provider (this card lists
+  `[github, cloudflare, supabase]`).
+- `repo-blueprint.yaml` keeps the input and its default; its description,
+  `BOOTSTRAP.md` and `docs/phases/README.md` say a hand-run `orun new` still
+  passes `--set subdomain`.
+- Nothing a product runs changed: no app, Terraform, test or tooling file.
+
+Verified: `testing/{manifest,phases,coverage,rebrand,retouch,bootstrap-defer}.test.sh`
+green; `gen-component-docs.py --check` green (3 components); `orun new
+--status` on `repo-blueprint.yaml`, `testing/leak.test.sh` (112 files
+derived, 104 text files read) and `testing/placement.test.sh` (112 tracked
+files; supabase → web enforced on stage and prod; `--resume` changes nothing)
+at v2.58.11; `orun task check SS-8` complete. Mutation check: with
+`cloudflare` removed from `spec.requires.integrations`, `manifest.test.sh`
+fails with the one finding `inputs[subdomain].from is
+'connection.cloudflare.workersSubdomain' but spec.requires.integrations does
+not list cloudflare`; restored, it passes.
 
 ## Verified (SS6)
 
