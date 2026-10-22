@@ -129,6 +129,13 @@ own domain:
 The apply owns the project's Auth URLs: an edit in the Supabase dashboard is
 undone by the next apply.
 
+The repository also names the domain in one place, `BASE_DOMAIN` under each
+environment's `env:` in `intent.yaml`, which the product was born with as the
+reserved placeholder `supabase-starter.example.com`. Nothing builds a URL from
+it — the origin is `SITE_URL` — so replacing it moves nothing by itself; it
+records the domain. Replace it with yours in the same pull request as
+`SITE_URL`.
+
 ## CI
 
 | Workflow | What it runs |

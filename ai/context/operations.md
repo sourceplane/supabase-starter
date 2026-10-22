@@ -156,7 +156,7 @@ orun integrations list --org <ws> --json && orun cloud check --org <ws>
 | require email confirmation | SMTP first, then `authEmailConfirmation: "true"` (above) |
 | add a table | create it with `enable row level security` and `auth.uid()` policies (above); the day the product has migrations, Lumen's `packages/db` + `db-migrate` is the shape, reading `SUPABASE_DB_URL` |
 | redeploy without a change | edit the last line of the component's `component.yaml` (`# orun: redeploy <reason> <stamp>`) and merge — it is a deploy trigger, nothing reads it |
-| serve a custom domain | attach it to the Worker in Cloudflare, set `SITE_URL` under `environments.prod.env` in `intent.yaml`, and touch the redeploy line of both `apps/web/component.yaml` and `infra/terraform/supabase/component.yaml` in the same PR (an `intent.yaml` change alone plans nothing) |
+| serve a custom domain | attach it to the Worker in Cloudflare (README, "Custom domain"), set `SITE_URL` under `environments.prod.env` in `intent.yaml`, replace the placeholder `supabase-starter.example.com` in `intent.yaml`'s `BASE_DOMAIN` with it (a record; nothing builds a URL from it), and touch the redeploy line of both `apps/web/component.yaml` and `infra/terraform/supabase/component.yaml` in the same PR (an `intent.yaml` change alone plans nothing) |
 | headless credentials | `ORUN_TOKEN` (workspace-scoped) + `GITHUB_TOKEN` |
 
 The deployment record is the bootstrap's `02-docs` phase. Re-running it (the

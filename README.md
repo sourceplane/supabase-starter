@@ -32,7 +32,7 @@ departure.
 git clone --depth 1 --branch <baseline-tag> https://github.com/sourceplane/supabase-starter
 cd supabase-starter
 orun new --blueprint repo-blueprint.yaml --out ~/products/acme-notes --run-hooks --resume \
-  --set reponame=acme-notes --set productname="Acme Notes" --set productdomain=acme.dev \
+  --set reponame=acme-notes --set productname="Acme Notes" \
   --set githuborg=acme-inc --set subdomain=<workers-dev-subdomain>
 ```
 
