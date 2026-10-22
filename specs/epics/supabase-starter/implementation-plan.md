@@ -124,6 +124,16 @@ product itself changing.
 - the docs check is green in Baseline CI
 - this file, the status file and `epic.yaml` agree
 
+## SS7 — the domain is set later (SS-9) ✅
+
+**Done when** the console card asks for no domain; `productdomain` is an
+optional build input, empty by default; a product built without one is
+branded with the reserved placeholder `<reponame>.example.com` where the
+domain goes (`BASE_DOMAIN` in `intent.yaml`) and its README says how an
+owner sets the real one, beside the `SITE_URL` that moves the app's links and
+the Supabase project's Auth; Baseline CI places, leak-checks and plans a
+product built with no domain. Shipped in `baseline-v4`.
+
 ## Sequencing note
 
 SS1 and SS2 are independent files but SS1's component already names the
