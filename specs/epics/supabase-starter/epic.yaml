@@ -61,3 +61,9 @@ spec:
         - "a product built without a domain is branded with the reserved placeholder <reponame>.example.com wherever the domain goes (BASE_DOMAIN), and its README says how an owner sets the real one beside SITE_URL"
         - "Baseline CI places, leak-checks and plans a product built with no domain"
       tasks: [SS-9]
+    - name: "SS8 — the build reads true"
+      exitCriteria:
+        - "every line the console's build panel shows from repo-blueprint.yaml is true and short: the repository, the epic, each landing, the link, each brokered key and the deployment record say what they left; no phase authors an await line, so the engine names what a phase waits on; each landing carries a label, and the docs phase's re-probe files no second set of addresses"
+        - "a product ships an AGENTS.md at its root that tells a coding agent what the product is, what to read first, how a change lands and what not to touch"
+        - "no product file says it is built on Lumen; no bytecode is tracked; the blueprint's ignore keeps local env files, Terraform state and bytecode out of a product"
+      tasks: [SS-10]

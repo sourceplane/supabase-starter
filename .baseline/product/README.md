@@ -29,6 +29,9 @@ deploys and how to operate it is in
 | The Supabase project (stage, prod) and its Auth settings | `infra/terraform/supabase` |
 | Tests | `tests/web` (vitest) |
 
+A coding agent starts at [AGENTS.md](AGENTS.md): what to read first, how a
+change lands, and what not to touch.
+
 ## Getting started
 
 ```bash

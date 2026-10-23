@@ -134,6 +134,30 @@ owner sets the real one, beside the `SITE_URL` that moves the app's links and
 the Supabase project's Auth; Baseline CI places, leak-checks and plans a
 product built with no domain. Shipped in `baseline-v4`.
 
+## SS8 — the build reads true (SS-10)
+
+orun-cloud's saas-build-panel BV4, this baseline's share. The console's build
+panel shows each hook's `narrate:` line verbatim as the build's progress and
+a phase's `await` line as what it waits on, and it ends by handing the owner a
+prompt to point a coding agent at the repository.
+
+**Done when**
+- the repo line reads the repository from the hook's own outputs and says
+  when this build created it; each landing names its pull request, or says
+  there was nothing to land; the link, each brokered key and the deployment
+  record leave a line; the run-level epic says it is open
+- no phase authors a `narrate.await`: the engine says what a phase waits on
+  ("<title>: <reason>"), a missing connection included; every `start` is one
+  clause, and no line claims what its step did not establish
+- both landings carry a `label:` (Product, Docs) and the 02-docs re-probe is
+  `quiet: true` — keys orun v2.86 reads and earlier releases ignore
+- a product ships `AGENTS.md`, and its README points at it
+- no shipped file says the product is built on Lumen; the committed bytecode
+  is gone and ignored; the blueprint's `ignore` keeps every local env file,
+  all Terraform state and Python bytecode out of a product
+- `testing/phases.test.sh`, the leak gate and the offline bootstrap hold all
+  of it
+
 ## Sequencing note
 
 SS1 and SS2 are independent files but SS1's component already names the

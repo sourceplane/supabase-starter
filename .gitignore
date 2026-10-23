@@ -16,6 +16,10 @@ coverage/
 plan.json
 next-env.d.ts
 
+# Python bytecode
+__pycache__/
+*.pyc
+
 # Terraform
 .terraform/
 *.tfstate

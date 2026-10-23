@@ -19,6 +19,7 @@ environment), then records what went live (`02-docs`).
 | | |
 |---|---|
 | Latest tag | `baseline-v4` (SS7 — the domain is set later: the console asks for no domain, and a product is born with the placeholder `<reponame>.example.com` in `BASE_DOMAIN` for an owner to replace); `baseline-v3` is SS6 (the cirrus standard), `baseline-v2` SS5, `baseline-v1` SS4 |
+| In review | SS8 (SS-10) — the build reads true in the console's build panel (saas-build-panel BV4): honest, short step lines, no authored await line (the engine says what a phase waits on), labelled landings, a quiet docs re-probe, and an `AGENTS.md` in every product. Untagged |
 | Proven live | No. Nothing has been applied against a real Supabase organization: no Terraform apply, no live deploy, no live bootstrap (risk SS-I). Everything short of the platform is proven offline in Baseline CI, against a local Supabase stand-in |
 
 ## Where to read
@@ -33,7 +34,10 @@ environment), then records what went live (`02-docs`).
 
 ## Next
 
-1. Bootstrap one product from `baseline-v4` against a workspace with a
+1. Cut `baseline-v5` once SS8 merges, so the registry can pin a build whose
+   lines the panel reads true (the labels and the quiet re-probe take effect
+   with orun v2.86; earlier releases ignore them).
+2. Bootstrap one product from the latest tag against a workspace with a
    Supabase connection, and record its timings — the apply, the brokered
    token's reach to the API-keys and Auth-config endpoints, a sign-up on the
    first deploy (closes SS-I).

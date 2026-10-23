@@ -80,10 +80,12 @@ for p in placed:
 
 # ── nothing local and nothing built ───────────────────────────────────────
 # `.env.example` and `.dev.vars.example` ship (they document the keys); a
-# real `.env`, `.dev.vars` or Terraform state never does.
-LOCAL = re.compile(r"(^|/)(\.env(\.[^/]*\.local|\.local)?|\.dev\.vars(\.local)?|node_modules|\.next|"
-                   r"\.open-next|\.wrangler|\.turbo|\.orun|\.terraform|[^/]*\.tfstate(\.backup)?|"
-                   r"next-env\.d\.ts|[^/]*\.tsbuildinfo|dist)(/|$)")
+# real `.env` or `.dev.vars` of any other name — a `.local` override, a
+# per-mode `.env.production`, a per-environment `.dev.vars.stage` — never
+# does, nor Terraform state, nor Python bytecode.
+LOCAL = re.compile(r"(^|/)(\.env(\.(?!example$)[^/]+)?|\.dev\.vars(\.(?!example$)[^/]+)?|node_modules|\.next|"
+                   r"\.open-next|\.wrangler|\.turbo|\.orun|\.terraform|[^/]*\.tfstate(\.[^/]+)?|"
+                   r"next-env\.d\.ts|[^/]*\.tsbuildinfo|dist|__pycache__|[^/]*\.pyc)(/|$)")
 for p in placed:
     if LOCAL.search(p):
         bad(f"{p} would ship — a local or built file of whoever ran the bootstrap")
@@ -91,6 +93,10 @@ for p in placed:
 # ── what a product cannot run without ─────────────────────────────────────
 if "README.md" not in placed:
     bad("README.md would not ship")
+# The build's last screen tells the owner to point a coding agent at the
+# repository; this is what the agent reads first.
+if "AGENTS.md" not in placed:
+    bad("AGENTS.md would not ship — a coding agent starts there")
 MUST = (
     ".github/workflows/ci.yml", ".github/workflows/checks.yml", ".rebrand/values.json",
     "apps/web/component.yaml", "apps/web/lib/site.ts", "apps/web/lib/supabase/errors.ts",
@@ -153,6 +159,7 @@ PROVENANCE = re.compile(
     re.I,
 )
 SOURCES = {"README.md": ".baseline/product/README.md",
+           "AGENTS.md": ".baseline/product/AGENTS.md",
            "ai/context/operations.md": "ai/context/operations.md",
            "ai/context/deployment.md": "ai/context/deployment.md",
            "apps/web/README.md": "apps/web/README.md"}

@@ -13,6 +13,7 @@ the code departed from `design.md` or from the upstream template.
 | SS5 — the product's own origin | ✅ Shipped | [#6](https://github.com/sourceplane/supabase-starter/pull/6) (SS-6), tagged `baseline-v2` |
 | SS6 — the cirrus standard | ✅ Shipped | [#7](https://github.com/sourceplane/supabase-starter/pull/7) (SS-7), [#8](https://github.com/sourceplane/supabase-starter/pull/8) (SS-8), tagged `baseline-v3` |
 | SS7 — the domain is set later | ✅ Shipped | [#9](https://github.com/sourceplane/supabase-starter/pull/9) (SS-9), tagged `baseline-v4` |
+| SS8 — the build reads true | In review (untagged) | [#10](https://github.com/sourceplane/supabase-starter/pull/10) (SS-10) |
 
 ## Departures from the upstream template
 
@@ -308,3 +309,68 @@ domain, writes `"productdomain": ""` and brands `acme-supabase.example.com`
 into the product's three `BASE_DOMAIN` lines, its README and its
 `operations.md` (5 lines, 3 files), with no `supabase-starter.example.com`
 left. `orun task check SS-9` complete.
+
+## The build reads true (SS8, SS-10)
+
+orun-cloud's saas-build-panel BV4, this baseline's share. The console's build
+panel shows each hook's `narrate:` verbatim as the build's progress, a phase's
+`narrate.await` as what it waits on, and the engine's facts (orun v2.86, not
+released when this landed) as the repository, the epic, each pull request and
+the live addresses. It ends by handing the owner a prompt that clones the
+repository with a coding agent. So every line had to be true and short, and a
+product had to be ready for an agent to start in.
+
+| What | Before | After |
+|---|---|---|
+| the repository's line | "The repository exists at <org>/<repo>." from the inputs | from the hook's own outputs: `<fullName> is ready`, plus "— created for this build" when it was |
+| each landing's line | "The product is merged into main." — also on a re-run with nothing to land | `PR #<n> is merged into main.`, or `Nothing new to land; main already has it.`; `label: Product` / `label: Docs` |
+| link, the four brokered keys, the deployment record, the epic | no line | one each: the link and what it is for; each key and the connection it comes from (static, and true whether minted now or kept); what the record is written from; `Epic <key> is open.` |
+| every phase's `await` | a description of the convergence ("Nothing is stuck.") or of the probe — shown, too, while the provider probe waited for a connection | none: the engine says it — "<title>: <what it waits on>" (an engine before the waiting reason, "<phase> is waiting."). Its reasons are whole clauses ("waiting for github to be connected in workspace …"), so the generic `Waiting on {{ .meta.waitingOn }}.` the review proposed read "Waiting on waiting for …" |
+| phase `start` / `done` / `failed` | up to three sentences; 01-product's `done` claimed "sign-up open", which no probe checks, and its `failed` named only the convergence's lanes | one clause each, claiming only what the phase established; `failed` points at the step that stopped it |
+| the 02-docs re-probe | would file the addresses a second time | `quiet: true` |
+| a product's agent guide | none | `AGENTS.md` at the root (module `root-agents`, from `.baseline/product/AGENTS.md`): what the product is; read `README.md`, `ai/context/operations.md`, `ai/context/deployment.md`, `apps/web/lib/supabase`, `infra/terraform/supabase`; how a change lands; what not to touch. The README points at it |
+| Lumen in the product | `intent.yaml`'s description ("on the Lumen baseline conventions"), `operations.md`'s migrations row, two comments in the supabase root | none: the description says what the product is, the migrations row says where migrations go, the comments say "the project's three database credentials" |
+| `testing/lib/__pycache__/*.pyc` | tracked | removed; `__pycache__/` and `*.pyc` in `.gitignore` (which ships) and in the blueprint's `ignore` |
+| the blueprint's `ignore` for local files | `.env`, `.env.local`, `.env.*.local`, `.dev.vars`, `.dev.vars.local`, `*.tfstate`, `*.tfstate.backup` | also `.env.[^e]*` and `.dev.vars.[^e]*` (a per-mode `.env.production`, a per-environment `.dev.vars.stage`; only `.example` ships), `.dev.vars.*.local`, `*.tfstate.*` (timestamped backups, the local lock) |
+
+The `label:` and `quiet:` keys are orun v2.86's and are ignored by earlier
+releases; the blueprint parses unchanged at v2.58.11 (the bootstrap floor),
+at orun main and with the v2.86 engine. No `with:` parameter was added: an
+earlier orun refuses an unknown one, so the probe keeps its flat `urls` (no
+labelled `targets`).
+
+Departures from the review: the await line. The review proposed a generic
+`Waiting on {{ .meta.waitingOn }}.` in every phase; the line is removed
+instead, for the reason in the table. `expectedMinutes` already agreed (card
+15 = phases 13 + 2 = registry 15). The `[^e]` patterns are the nearest
+`path.Match` comes to "everything but `.example`"; a local `.env.e2e` would
+get past them, and the leak gate — whose local-file rule now flags every
+`.env.*` and `.dev.vars.*` but `.example` — fails on it.
+
+- `testing/phases.test.sh` holds it: no phase authors an await line (the
+  per-phase requirement now skips that slot, which the engine fills), the
+  repo, link, secret, land and render hooks narrate, every landing has a
+  label, a hook-only phase's re-probe is quiet, `label`/`pin`/`quiet` have their shapes, and the run-level hooks'
+  lines obey the same rules. Mutation-checked: each rule fails alone, naming
+  the hook.
+- `testing/leak.test.sh`: `AGENTS.md` ships and is read for the factory's
+  paths and provenance prose; `.env`/`.dev.vars` of any name but `.example`,
+  any Terraform state file and bytecode are local files.
+- `testing/placement.test.sh`: the placed product's `AGENTS.md` is branded,
+  sends an agent to both context pages, and the README points at it.
+- `testing/manifest.test.sh`: two comments named a `domain` input that no
+  longer exists.
+
+Verified: `testing/{manifest,phases,coverage,rebrand,retouch,bootstrap-defer}.test.sh`
+green; `gen-component-docs.py --check` green (3 components); `orun new
+--status` on `repo-blueprint.yaml` at v2.58.11, orun main and the v2.86 engine
+(01-product pending, 113 files); `testing/leak.test.sh` (113 files derived,
+105 text files read) and `testing/placement.test.sh` (113 tracked files;
+supabase → web enforced on stage and prod; `--resume` changes nothing) at each
+of the three; `testing/e2e.test.sh` at v2.78.4 (its Terraform step skipped: no
+terraform on PATH; the root's change is two comments). Every narration line
+rendered through the v2.86 engine's own narration functions with the outputs
+its action returns — the repository created and found, a landing merged and
+one with nothing to land — none falling back; a wait on a connection reads
+"The product, built in one landing: waiting for github to be connected in
+workspace …", from the engine. `orun task check SS-10 --base origin/main` complete, affects ok.
