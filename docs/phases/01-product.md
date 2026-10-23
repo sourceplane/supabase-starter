@@ -5,7 +5,8 @@ provisions and deploys it on stage and prod: the Supabase project, its Auth
 pointed at the app, and then the app — in that order, per environment.
 
 **Places** every module `repo-blueprint.yaml` declares: the root manifests,
-CI, tooling and identity; the discovery roots; `infra/terraform/supabase`;
+the product's README and `AGENTS.md` (where a coding agent starts), CI,
+tooling and identity; the discovery roots; `infra/terraform/supabase`;
 `apps/web`; and `tests/web`. `testing/phases.test.sh` holds the set.
 
 **Requires** three live connections, probed and waited for (up to ten
@@ -43,7 +44,7 @@ main and reads the order off it: `supabase → web`.
 | `repo` | `orun.repo/ensure@v1`: creates (or finds) `<githuborg>/<reponame>` |
 | `link` | the repository becomes the workspace's (`orun cloud link`, best effort; `orun cloud check` is the gate). Every convergence lane authenticates over GitHub OIDC through that link |
 | `secret-*` | four `orun.integrations/reconcile@v1` hooks, one key and one scope each: `CLOUDFLARE_API_TOKEN` (workers-deploy), `CLOUDFLARE_ACCOUNT_ID` (account-id), `SUPABASE_ACCESS_TOKEN` (management-access), `SUPABASE_ORG_ID` (org-id). Keys that exist are kept |
-| `land` | one PR, checked (Checks, and `plan` alone on a bootstrap branch), then merged |
+| `land` | one PR, checked (Checks, and `plan` alone on a bootstrap branch), then merged; labelled `Product` in the build panel |
 | `converge` (await) | `orun.run/watch@v1` on the merge commit's run; resumes it up to three times |
 | `wiring` (await) | `orun.secrets/exists@v1`: `WIRING_SUPABASE`, `SUPABASE_PROJECT_REF`, `SUPABASE_DB_PASSWORD` and `SUPABASE_DB_URL` on stage and prod |
 | `verify` (await) | `orun.http/probe@v1`: `/` and `/api/health` on both workers.dev URLs |

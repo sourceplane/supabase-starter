@@ -1,0 +1,30 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: SS-10
+  title: "The build reads true in the panel"
+spec:
+  goal: "Every line the console's build panel shows from repo-blueprint.yaml is true and short (orun-cloud saas-build-panel BV4): the repo, land, link, secret and render steps each say what they left, the epic says it is open, every phase leaves its waiting line to the engine, which names what it waits on, each landing carries a label and the docs phase's re-probe is quiet. And a product is ready for an agent to start in: it ships an AGENTS.md at its root, says nothing of being built on Lumen, and carries no local env file, Terraform state or bytecode"
+  affects:
+    - repo-blueprint.yaml
+    - .baseline/product/**
+    - .gitignore
+    - intent.yaml
+    - ai/context/**
+    # The supabase component, by the key `orun task check --base` compares:
+    # two of its comments no longer name Lumen.
+    - default/supabase-starter/supabase
+    - infra/terraform/supabase/component.yaml
+    - infra/terraform/supabase/terraform/main.tf
+    - testing/**
+    - docs/phases/**
+    - specs/**
+    - tasks/**
+  doneWhen:
+    - "no phase authors a narrate.await (the engine says what it waits on), every start line is one clause, and the repo, link, secret-*, land and render hooks and the run-level epic narrate what they left (testing/phases.test.sh, mutation-checked)"
+    - "both landings carry a label (Product, Docs) and the 02-docs re-probe is quiet; the blueprint still parses with orun v2.58.11 and with orun main"
+    - "a product ships AGENTS.md at its root, branded, sending an agent to README.md, ai/context/operations.md and ai/context/deployment.md, and the README points at it (testing/leak.test.sh, testing/placement.test.sh)"
+    - "no shipped file says the product is built on Lumen; testing/lib/__pycache__ is untracked and ignored; the blueprint's ignore keeps every .env and .dev.vars but the two .example files, all Terraform state and Python bytecode out of a product"
+    - the contract tests, the docs check, the leak gate and the offline bootstrap are green
+  gates:
+    - checks

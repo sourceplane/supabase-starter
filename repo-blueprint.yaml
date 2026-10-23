@@ -124,18 +124,29 @@ ignore:
   - plan.json
   - "**/*.tsbuildinfo"
   - "**/next-env.d.ts"
+  # Terraform state and what sits beside it: the `.backup`, the timestamped
+  # backups and the local lock (`.terraform.tfstate.lock.info`).
   - "**/*.tfstate"
-  - "**/*.tfstate.backup"
+  - "**/*.tfstate.*"
+  # Python bytecode, should a tool ever run beside a shipped file.
+  - __pycache__
+  - "**/*.pyc"
   # `orun new` snapshots the WORKING TREE, not the git index: an operator's
   # local environment files would otherwise be copied into somebody else's
   # repository. `.env.example` and `.dev.vars.example` are not among them,
-  # and ship — which is why this names `.dev.vars` and `.dev.vars.local`
-  # rather than `.dev.vars.*`.
+  # and ship — which is why this is not `.env*` and `.dev.vars*`. Every other
+  # name is: the bare file, a `.local` override, and a per-mode or
+  # per-environment file (`.env.production`, `.dev.vars.stage`). `[^e]` is
+  # path.Match's "any character but e", so only a suffix that starts with
+  # `e` gets past these, and testing/leak.test.sh lets only `.example` ship.
   - "**/.env"
   - "**/.env.local"
   - "**/.env.*.local"
+  - "**/.env.[^e]*"
   - "**/.dev.vars"
   - "**/.dev.vars.local"
+  - "**/.dev.vars.*.local"
+  - "**/.dev.vars.[^e]*"
   # THE FACTORY'S OWN LANES. `github-workflows` copies the whole of `.github`,
   # so without these two entries every product built from this baseline would
   # carry them — `baseline.yml` runs `testing/*.sh`, which no module places,
@@ -214,6 +225,17 @@ modules:
     source: baseline
     from: .baseline/product/README.md
     to: README.md
+  # The product's guide for a coding agent, at the root where agents look
+  # first. The build's last screen hands the owner a prompt that ends "Then
+  # clone <repo> and start building on it"; this is what the agent finds
+  # there: what the product is, what to read, how a change lands, what not
+  # to touch. The product's, like the README: this repository's own agents
+  # read ai/context/current.md.
+  - name: root-agents
+    mode: copy
+    source: baseline
+    from: .baseline/product/AGENTS.md
+    to: AGENTS.md
   - name: github-workflows
     mode: copy
     source: baseline
@@ -323,6 +345,7 @@ hooks:
   preInstantiate:
     - id: epic
       uses: orun.task/ensure@v1
+      narrate: 'Epic {{ .hooks.epic.outputs.key }} is open.'
       with:
         kind: epic
         slug: "{{ .inputs.epicSlug }}"
@@ -411,12 +434,17 @@ phases:
     title: The product, built in one landing
     description: The whole tree — manifests, CI, tooling, the Supabase root, the app and its tests — branded, landed as one pull request, and provisioned and deployed by one convergence.
     expectedMinutes: 13
+    # The console's build panel shows these lines verbatim, and the hooks'
+    # own `narrate:` below as its progress, so each says one true thing,
+    # briefly. NO `await` LINE, in either phase: a wait is also what the
+    # `requires.probe` below does while a connection is missing, and with no
+    # authored line the engine says it itself — "<title>: <what it waits
+    # on>" — where an authored one could only guess.
     narrate:
-      start:  "Creating the repository and landing the whole product in one pull request — the app and the Terraform for a Supabase project per environment. Then one convergence provisions the projects and deploys the app. Usually about {{ .meta.expectedMinutes }} minutes."
-      await:  "One convergence is running per environment: the Supabase project first (five to seven minutes to come up), its Auth pointed at the app, then the app. Nothing is stuck."
-      done:   "{{ .inputs.reponame }} is live on stage and prod — {{ .meta.files }} files on main, branded as {{ .inputs.productname }}, sign-up open on its own Supabase project. That took {{ .meta.elapsed }}."
-      failed: "The product did not come up. The failing lane above names the component — supabase or web — and the provider's own error is in its log; whatever was provisioned is still there."
-    modules: [ai-deployment, ai-operations, discovery-roots, github-workflows, rebrand-values, root-gitignore, root-intent, root-package-json, root-pnpm-lock, root-pnpm-workspace, root-readme, root-turbo, supabase, tooling-eslint, tooling-tsconfig, tooling-wire, vscode, web, web-tests]
+      start:  "Landing the whole product as one pull request, then deploying it to stage and prod — about {{ .meta.expectedMinutes }} minutes."
+      done:   "{{ .inputs.productname }} is live on stage and prod, each on its own Supabase project ({{ .meta.elapsed }})."
+      failed: "The product is not up. The step above names what stopped it; whatever it already created is still there."
+    modules: [ai-deployment, ai-operations, discovery-roots, github-workflows, rebrand-values, root-agents, root-gitignore, root-intent, root-package-json, root-pnpm-lock, root-pnpm-workspace, root-readme, root-turbo, supabase, tooling-eslint, tooling-tsconfig, tooling-wire, vscode, web, web-tests]
     # THE PLATFORM MUST BE ABLE TO SEE THE REPOSITORY BEFORE IT EXISTS. Every
     # phase lands a pull request that files under its task, and the platform
     # learns of a PR only through the GitHub App installation on the account
@@ -528,7 +556,7 @@ phases:
         # The repo has to exist before there is anywhere to land.
         - id: repo
           uses: orun.repo/ensure@v1
-          narrate: "The repository exists at {{ .inputs.githuborg }}/{{ .inputs.reponame }}."
+          narrate: '{{ .hooks.repo.outputs.fullName }} is ready{{ if eq .hooks.repo.outputs.created "true" }} — created for this build{{ end }}.'
           with:
             owner: "{{ .inputs.githuborg }}"
             name: "{{ .inputs.reponame }}"
@@ -541,6 +569,7 @@ phases:
         # so it is best effort and `check` is the gate — an unlinked
         # repository stops here, naming the fix, instead of in every lane.
         - id: link
+          narrate: "The repository is linked to the workspace, so its CI can sign in."
           run:
             - bash
             - -c
@@ -565,26 +594,34 @@ phases:
         # No Hyperdrive, D1, KV or R2 token and no db-migrate bundle: the app
         # reaches Supabase over HTTPS with the publishable key, which the
         # supabase apply publishes in WIRING_SUPABASE itself.
+        #
+        # Each line is static: a hook id with a `-` cannot be named in a
+        # template, and the line is true whether the key was minted now or
+        # kept from an earlier run.
         - id: secret-workers-deploy
           uses: orun.integrations/reconcile@v1
+          narrate: "CLOUDFLARE_API_TOKEN, for Workers deploys, is in place from the Cloudflare connection."
           with:
             provider: cloudflare
             keys: [CLOUDFLARE_API_TOKEN]
             template: workers-deploy
         - id: secret-account-id
           uses: orun.integrations/reconcile@v1
+          narrate: "CLOUDFLARE_ACCOUNT_ID is in place from the Cloudflare connection."
           with:
             provider: cloudflare
             keys: [CLOUDFLARE_ACCOUNT_ID]
             template: account-id
         - id: secret-supabase-access
           uses: orun.integrations/reconcile@v1
+          narrate: "SUPABASE_ACCESS_TOKEN, for the Supabase projects, is in place from the Supabase connection."
           with:
             provider: supabase
             keys: [SUPABASE_ACCESS_TOKEN]
             template: management-access
         - id: secret-supabase-org
           uses: orun.integrations/reconcile@v1
+          narrate: "SUPABASE_ORG_ID is in place from the Supabase connection."
           with:
             provider: supabase
             keys: [SUPABASE_ORG_ID]
@@ -595,9 +632,12 @@ phases:
         # branch (`orun/BASE-…`) the lanes are skipped (ci.yml), because the
         # merge runs every one of them on main a minute later, for real, and
         # the convergence after the merge is what this phase watches to green.
+        # A landing succeeds only once its PR is merged; `landed` is "false"
+        # when main already had every file (a re-run with nothing to land).
         - id: land
           uses: orun.pr/land@v1
-          narrate: "The product is merged into main."
+          label: Product
+          narrate: '{{ if eq .hooks.land.outputs.landed "true" }}PR #{{ .hooks.land.outputs.number }} is merged into main.{{ else }}Nothing new to land; main already has it.{{ end }}'
           with:
             task: "{{ .phase.hooks.task.outputs.key }}"
             epic: "{{ .inputs.epicSlug }}"
@@ -606,7 +646,7 @@ phases:
       await:
         - id: converge
           uses: orun.run/watch@v1
-          narrate: "The Supabase project and then the app went out on stage and prod, and the convergence run came back green."
+          narrate: "The convergence run is green: Supabase, then the app, on stage and prod."
           with:
             # The run for the commit THIS landing merged (an unpinned watch
             # reads the previous push's run). The budget is roughly three
@@ -624,7 +664,7 @@ phases:
         # change adds.
         - id: wiring
           uses: orun.secrets/exists@v1
-          narrate: "The Supabase project's URL and publishable key, and its database credentials, are published on stage and prod."
+          narrate: "WIRING_SUPABASE and the database credentials are published on stage and prod."
           with:
             keys: [WIRING_SUPABASE, SUPABASE_PROJECT_REF, SUPABASE_DB_PASSWORD, SUPABASE_DB_URL]
             project: "{{ .inputs.reponame }}"
@@ -647,10 +687,9 @@ phases:
     description: The live-deployment manifest, rendered from probed reality, and the promotion gate and dev's lanes put back.
     expectedMinutes: 2
     narrate:
-      start:  "Now recording what was actually built — probing every URL, noting whether sign-up asks for email confirmation, and writing the deployment manifest into the repository."
-      await:  "Probing the live endpoints one last time."
-      done:   "ai/context/deployment.md now records the live deployment, written from probed facts, and prod waits on stage again. {{ .meta.elapsed }}."
-      failed: "The deployment record did not land. The product is still live; only the write-up is missing."
+      start:  "Probing the live URLs and writing down what answered."
+      done:   "The deployment record is on main, and prod waits on stage again ({{ .meta.elapsed }})."
+      failed: "The step above names what stopped it. This phase changes nothing the product runs."
     modules: []
     requires:
       phases: [01-product]
@@ -678,18 +717,23 @@ phases:
         - id: dev-lanes
           run: ["node", "{{ .baseline.dir }}/tooling/bootstrap/dev-lanes.mjs", "--restore"]
         - id: render
+          narrate: "ai/context/deployment.md and the README's live section are written from what each URL answered."
           run: ["bash", "{{ .baseline.dir }}/hooks/render-deployment-docs.sh", ".", "{{ .inputs.orunWorkspace }}", "{{ .baseline.dir }}"]
         - id: land
           uses: orun.pr/land@v1
-          narrate: "The deployment record is merged into main."
+          label: Docs
+          narrate: '{{ if eq .hooks.land.outputs.landed "true" }}PR #{{ .hooks.land.outputs.number }} is merged into main.{{ else }}Nothing new to land; main already has it.{{ end }}'
           with:
             task: "{{ .phase.hooks.task.outputs.key }}"
             epic: "{{ .inputs.epicSlug }}"
             branchSlug: "{{ .phase.name }}"
             title: "docs(deployment): record the live deployment state"
       await:
+        # The addresses 01-product's probe recorded; quiet, so this re-probe
+        # files no second set of them.
         - id: verify
           uses: orun.http/probe@v1
+          quiet: true
           narrate: "Every live URL answered on the final probe."
           with:
             urls:

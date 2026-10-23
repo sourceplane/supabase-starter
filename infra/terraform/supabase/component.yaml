@@ -34,9 +34,10 @@ spec:
     # project sends email (the product's README, "Email").
     authEmailConfirmation: "false"
     # SEC-JOB: post-apply, these outputs are queued on the runner's sink and
-    # lease-published onto the project/{{env}} rung by the runner. Lumen's
-    # three database credentials, and WIRING_SUPABASE — the project URL and
-    # the publishable (anon) key, the one document the app's deploy reads.
+    # lease-published onto the project/{{env}} rung by the runner. The
+    # project's three database credentials, and WIRING_SUPABASE — the project
+    # URL and the publishable (anon) key, the one document the app's deploy
+    # reads.
     # The service-role key is never published.
     secretOutputs: "SUPABASE_PROJECT_REF=project_ref,SUPABASE_DB_PASSWORD=database_password,SUPABASE_DB_URL=connection_uri,WIRING_SUPABASE=wiring"
 

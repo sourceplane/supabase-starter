@@ -49,6 +49,25 @@ domain needs zone permissions the brokered `workers-deploy` token does not
 carry, so it is an owner's step after the bootstrap (the product's README,
 "Custom domain").
 
+## What a phase says
+
+The console's build panel shows a hook's `narrate:` verbatim as the build's
+progress and a phase's `narrate.await` as what it is waiting on; from orun
+v2.86 the engine's facts pin the repository, the epic, each pull request and
+the live addresses beside them. So every line says one true thing about the
+world, briefly, and no line asserts a state (`testing/phases.test.sh`):
+
+- neither phase authors an `await` line: the engine says what a phase waits
+  on — "<title>: <reason>" — which is also the line while `01-product`'s
+  probe waits for a connection, and only the engine knows the reason;
+- a line holds for every outcome its hook can have: the repository's says
+  whether this build created it, a landing names its pull request or says
+  there was nothing to land, a brokered key's holds whether it was minted now
+  or kept;
+- each landing carries a `label:` (`Product`, `Docs`), and `02-docs`'s
+  re-probe is `quiet: true`, so the panel gets one set of addresses. orun
+  releases before v2.86 ignore both keys.
+
 ## Inputs
 
 `01-product` takes the product's identity once and writes it into the repo

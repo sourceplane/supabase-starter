@@ -3,7 +3,7 @@ kind: Intent
 
 metadata:
   name: supabase-starter
-  description: Vercel's Next.js + Supabase starter (Supabase Auth with cookie sessions, protected routes) ported to Cloudflare Workers + Static Assets with a Terraform-provisioned Supabase project, on the Lumen baseline conventions
+  description: Vercel's Next.js + Supabase starter (Supabase Auth with cookie sessions, protected routes) on Cloudflare Workers + Static Assets, with a Supabase project per environment provisioned by Terraform and deployed through Orun
   namespace: sourceplane
 
 execution:

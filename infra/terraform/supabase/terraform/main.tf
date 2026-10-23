@@ -165,10 +165,10 @@ resource "supabase_project" "this" {
 #
 # Credentials leave this module ONLY through the outputs component.yaml's
 # `secretOutputs` names, which the runner lease-publishes onto the project's
-# environment rung after the apply (never argv, never a log). Lumen's three
-# database credentials below are published for the owner and for any later
-# step that migrates the database; the app reads the `wiring` document further
-# down. No Secrets Manager.
+# environment rung after the apply (never argv, never a log). The project's
+# three database credentials below are published for the owner and for any
+# later step that migrates the database; the app reads the `wiring` document
+# further down. No Secrets Manager.
 
 output "project_ref" {
   description = "Supabase project reference ID"

@@ -46,7 +46,7 @@ if not phases:
     sys.exit("repo-blueprint.yaml declares no phases — this check has gone blind")
 
 PRODUCT = ["ai-deployment", "ai-operations", "discovery-roots", "github-workflows",
-           "rebrand-values", "root-gitignore", "root-intent",
+           "rebrand-values", "root-agents", "root-gitignore", "root-intent",
            "root-package-json", "root-pnpm-lock", "root-pnpm-workspace", "root-readme",
            "root-turbo", "supabase", "tooling-eslint", "tooling-tsconfig", "tooling-wire",
            "vscode", "web", "web-tests"]
@@ -325,13 +325,25 @@ def check_line(where, line, slot, hook_ids):
         else:
             bad(f"{where} names .{ref}; narration may reference phase, inputs, meta and hooks")
 
+# The run-level hooks are reported under no phase, and read only their own
+# outputs.
+run_ids = {h.get("id") for h in run_hooks}
+for h in run_hooks:
+    if h.get("narrate"):
+        check_line(f"hooks.preInstantiate {h.get('id')} narrate", h["narrate"], "start", run_ids)
+
+# `await` is the one slot a phase leaves to the engine: with no authored
+# line, a waiting event reads "<title>: <what it waits on>" in the engine's
+# own words (an older engine says "<phase> is waiting."). An authored one is
+# refused below.
 for p in phases:
     n = p.get("narrate") or {}
     ids = {h.get("id") for h in hooks_of(p)}
     for slot in ("start", "await", "done", "failed"):
         line = n.get(slot)
         if not line:
-            bad(f"phase {p['name']} declares no narrate.{slot}")
+            if slot != "await":
+                bad(f"phase {p['name']} declares no narrate.{slot}")
             continue
         check_line(f"phase {p['name']} narrate.{slot}", line, slot, ids)
     for h in ((p.get("hooks") or {}).get("await") or []):
@@ -346,6 +358,49 @@ for p in phases:
             if h.get("narrate"):
                 check_line(f"phase {p['name']} hook {h.get('id')} narrate", h["narrate"], "start", ids)
 
+# ── what the build panel reads (orun-cloud saas-build-panel BV4) ─────────
+# The console shows each hook's `narrate:` verbatim as the build's progress
+# and a phase's waiting line as what it waits on. So: no phase authors an
+# `await` line — a wait is also a `requires.probe` asking for a connection,
+# and only the engine knows what it waits on (the line it generates is
+# "<title>: <reason>"; the reasons are whole clauses, so no authored frame
+# around `.meta.waitingOn` reads true); every step a reader should see
+# says what it left behind; every landing names its pull request for the
+# reader (`label`); and a hook-only phase's re-probe files no second set of
+# addresses (`quiet`). `label`, `pin` and `quiet` are orun >= v2.86 keys that
+# earlier releases ignore — their shapes are checked here.
+NARRATED = {"01-product": ["repo", "link", "secret-*", "land"],
+            "02-docs": ["render", "land"]}
+for p in phases:
+    if (p.get("narrate") or {}).get("await"):
+        bad(f"phase {p['name']} authors narrate.await — leave it to the engine, which "
+            f"says what the phase waits on (\"<title>: <reason>\"), a connection included")
+    for h in hooks_of(p):
+        if "label" in h and not (isinstance(h["label"], str) and h["label"].strip()):
+            bad(f"phase {p['name']} hook {h.get('id')} label must be a non-empty string")
+        for key in ("pin", "quiet"):
+            if key in h and not isinstance(h[key], bool):
+                bad(f"phase {p['name']} hook {h.get('id')} {key} must be true or false")
+        if (h.get("uses") or "").startswith("orun.pr/land@") and not h.get("label"):
+            bad(f"phase {p['name']} landing {h.get('id')} has no label — the panel names "
+                f"each pull request by it")
+for name, want in NARRATED.items():
+    post = ((by_name.get(name) or {}).get("hooks") or {}).get("post") or []
+    for tok in want:
+        hooks = [h for h in post if (h.get("id") == tok or
+                 (tok.endswith("*") and (h.get("id") or "").startswith(tok[:-1])))]
+        if not hooks:
+            bad(f"phase {name} has no {tok} hook to narrate")
+        for h in hooks:
+            if not h.get("narrate"):
+                bad(f"phase {name} hook {h.get('id')} declares no narrate — the panel "
+                    f"shows nothing for it")
+for name in HOOK_ONLY:
+    for h in ((by_name.get(name) or {}).get("hooks") or {}).get("await") or []:
+        if (h.get("uses") or "").startswith("orun.http/probe@") and h.get("quiet") is not True:
+            bad(f"phase {name} re-probes with {h.get('id')} and is not quiet — the "
+                f"addresses would be filed a second time")
+
 # ── what a baseline of this shape never grows back ────────────────────────
 if (root / "flows").exists():
     bad("flows/ exists — the bootstrap is the blueprint; every mechanism is a typed orun action")
@@ -359,6 +414,7 @@ if problems:
 placed_n = sum(len(p.get("modules") or []) for p in phases)
 narrated = sum(len(p.get("narrate") or {}) for p in phases)
 narrated += sum(1 for p in phases for h in hooks_of(p) if h.get("narrate"))
+narrated += sum(1 for h in run_hooks if h.get("narrate"))
 print(f"   {len(phases)} phases, {placed_n} modules (all in 01-product), {len(HOOK_ONLY)} hook-only — in execution order")
 print(f"   the hook chain in order; 01-product awaits {sorted(published)} on stage and prod")
 print(f"   {narrated} authored narration lines, every reference resolving")
