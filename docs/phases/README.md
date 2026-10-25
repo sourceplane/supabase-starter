@@ -9,8 +9,13 @@ container the same operation as running them all.
 
 Each phase follows the same contract:
 
-> **place its modules → brand them → land them as one pull request → watch
-> the convergence that merge triggers (auto-resumed) → verify the outcome.**
+> **place its modules → brand them → check them in the box and land them as
+> one pull request → watch the convergence that merge triggers
+> (auto-resumed) → verify the outcome.**
+
+The run's task set-up — the epic, a milestone per phase, a task per landing
+— runs in the background from the start; the first hook that needs it, the
+phase's `task`, waits for it.
 
 Run from the baseline checkout (the blueprint's source is `path: .`); the
 product's repository is wherever `--out` points.
@@ -19,7 +24,7 @@ product's repository is wherever `--out` points.
 
 | phase | lands | verified by |
 |---|---|---|
-| [`01-product`](01-product.md) | **the GitHub repo created**, then the WHOLE product in one PR: intent, CI, tooling, the Supabase Terraform root, the app and its tests — one convergence provisions and deploys it in dependency order | convergence green; `WIRING_SUPABASE` and the project's three database credentials published on stage and prod; `/` and `/api/health` answer on both |
+| [`01-product`](01-product.md) | **the GitHub repo created**, then the WHOLE product in one PR: intent, CI, tooling, the Supabase Terraform root, the app and its tests — one convergence provisions and deploys it in dependency order | convergence green (the app's deploy resolving the `WIRING_SUPABASE` the apply published); the project's three database credentials, which nothing reads yet, published on stage and prod; `/` and `/api/health` answer on both |
 | [`02-docs`](02-docs.md) | the live-deployment record; the promotion gate and dev's lanes put back | committed manifest matches probed reality |
 
 **One landing builds the product.** The order the app needs — the Supabase
@@ -35,14 +40,25 @@ A job resolves its secrets when it starts, so the app's deploy reads the
 wiring document the apply published: the project's URL and publishable key,
 rendered into the Worker's vars and inlined into the browser bundle.
 `testing/placement.test.sh` reads that order off the product's own
-`orun plan --trigger github-push-main`.
+`orun plan --trigger github-push-main`. The deploy reads the document from
+the place every later deploy looks, and its render fails without it, so a
+green convergence already says it is there — there is no separate check.
+Only what nothing in the convergence reads (the project's three database
+credentials) is asked of the platform afterwards.
 
 Every landing is a pull request on a branch named for its task
-(`orun/BASE-<n>-<phase>`). On those branches `ci.yml` runs `plan` only — the
-intent, every component and every composition resolve — and skips the lanes,
+(`orun/BASE-<n>-<phase>`), checked before it is pushed: `orun validate`, then
+`orun plan` as the pull request and as the merge would plan it, in the box,
+in under a second (`checks: local`). Then it merges; nothing waits for the
+PR's CI. On those branches `ci.yml` runs `plan` only and skips the lanes,
 because the merge runs them on main a minute later, for real, and that
-convergence is what the phase watches. `checks.yml` (install, typecheck,
-lint, test, build) runs on every pull request regardless.
+convergence is what the phase watches. The product carries no other
+workflow. Its pull requests run `ci.yml`'s verify lanes — the app built and
+dry-deployed per environment, the Supabase root planned — which type-check,
+lint and test nothing; the baseline's own CI (Tier 2) installs, renders the
+fixture, type-checks, lints, tests and builds this landing before a tag is
+cut, and the product's README and `AGENTS.md` tell its developers to run
+those steps before they push.
 
 There is no custom-domain phase: the app answers on workers.dev. Attaching a
 domain needs zone permissions the brokered `workers-deploy` token does not
@@ -64,9 +80,9 @@ world, briefly, and no line asserts a state (`testing/phases.test.sh`):
   whether this build created it, a landing names its pull request or says
   there was nothing to land, a brokered key's holds whether it was minted now
   or kept;
-- each landing carries a `label:` (`Product`, `Docs`), and `02-docs`'s
-  re-probe is `quiet: true`, so the panel gets one set of addresses. orun
-  releases before v2.86 ignore both keys.
+- each landing carries a `label:` (`Product`, `Docs`), and `02-docs` has no
+  re-probe — its render probes as it writes — so the panel gets the one set
+  of addresses `01-product`'s probe filed.
 
 ## Inputs
 

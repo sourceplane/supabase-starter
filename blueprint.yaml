@@ -25,7 +25,7 @@ metadata:
     per environment — two in all, stage and prod, which is the free plan's
     limit per organization — points its Auth at the Worker, and CI deploys
     the app to both on merge, after its project. Sign-up works on the first
-    deploy, no email server needed. Live in about fifteen minutes.
+    deploy, no email server needed. Live in about thirteen minutes.
   tags: [supabase, auth, cloudflare, nextjs]
 spec:
   source:
@@ -109,14 +109,15 @@ spec:
       from: connection.cloudflare.workersSubdomain
 
   # ── PREVIEW ONLY. repo-blueprint.yaml's `orun.integrations/reconcile@v1`
-  # hooks mint these, brokered, during 01-product. ─────────────────────────
-  # Transcribed from those hooks' own `keys:` and `template:` values, so
-  # testing/manifest.test.sh compares this list to the document that mints
-  # them. The console renders them read-only: no credential is ever typed,
-  # shown or stored. Keys that already exist are kept. Four keys, four
-  # scopes: the app needs no Hyperdrive, D1, KV or R2, and no database
-  # migration step — it reaches Supabase over HTTPS with the project's
-  # publishable key, which the Terraform apply publishes itself.
+  # hooks mint these, brokered, during 01-product — one hook per provider. ─
+  # Transcribed from those hooks' own `provider:` and `secrets:` ({key,
+  # template}) values, in their order, so testing/manifest.test.sh compares
+  # this list to the document that mints them. The console renders them
+  # read-only: no credential is ever typed, shown or stored. Keys that
+  # already exist are kept. Four keys, four scopes: the app needs no
+  # Hyperdrive, D1, KV or R2, and no database migration step — it reaches
+  # Supabase over HTTPS with the project's publishable key, which the
+  # Terraform apply publishes itself.
   secrets:
     - key: CLOUDFLARE_API_TOKEN
       provider: cloudflare
@@ -152,10 +153,10 @@ spec:
     # THE BUILD DOCUMENT. There is no umbrella workflow and no agent brief:
     # every phase is declared in it and orun runs it.
     blueprint: repo-blueprint.yaml
-    # Summed from the phases' expectedMinutes. An estimate until a bootstrap
-    # measures it: a Supabase project takes five to seven minutes to come up,
-    # and the app's build waits on it.
-    expectedMinutes: 15
+    # Summed from the phases' expectedMinutes (12 + 1). An estimate until a
+    # bootstrap measures it: a Supabase project takes five to seven minutes to
+    # come up, and the app's build waits on it.
+    expectedMinutes: 13
     tokenChannel: ORUN_TOKEN_FILE   # how a runner hands over its refreshed token
   verify:
     urls:

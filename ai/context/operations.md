@@ -2,7 +2,7 @@
 
 This is the standing guide to how this product is deployed and operated.
 Instance facts (live URLs, workspace, how sign-up behaves on each
-environment, the secrets inventory) live in [deployment.md](deployment.md),
+environment, the secrets it uses) live in [deployment.md](deployment.md),
 rendered from probed reality by the bootstrap's `02-docs` phase; this file is
 the contract that stays true between deployments. It is written to give an
 agent with repository read access enough context to reason about and operate
@@ -26,10 +26,12 @@ component-native desired-state repo. Three components:
   into one Worker plus Static Assets. It talks to Supabase over HTTPS with
   supabase-js (`@supabase/ssr`): the browser directly, the Worker on the
   server — never a Postgres connection.
-- **`tests/web`** — the vitest suite, verified on the `dev` rung.
+- **`tests/web`** — the vitest suite (`pnpm test`). Its `dev` lane installs
+  it and checks its structure; it does not run the tests, so run them (and
+  `pnpm typecheck`, `pnpm lint`) before you push.
 
 Environments: **`stage`** and **`prod`** are deployed; **`dev` is
-verify-only by design** — lanes build and test, nothing deploys.
+verify-only by design** — lanes build and verify, nothing deploys.
 
 ## Identity and tenancy
 

@@ -98,7 +98,7 @@ if "README.md" not in placed:
 if "AGENTS.md" not in placed:
     bad("AGENTS.md would not ship — a coding agent starts there")
 MUST = (
-    ".github/workflows/ci.yml", ".github/workflows/checks.yml", ".rebrand/values.json",
+    ".github/workflows/ci.yml", ".rebrand/values.json",
     "apps/web/component.yaml", "apps/web/lib/site.ts", "apps/web/lib/supabase/errors.ts",
     # The build reads the Supabase project from the wrangler config:
     "apps/web/next.config.ts",
