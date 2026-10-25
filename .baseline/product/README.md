@@ -12,9 +12,9 @@ pointed at the app, on every merge to `main`.
 
 <!-- 02-docs:begin -->
 Not recorded yet. The bootstrap's last phase writes the live URLs, the
-workspace, how sign-up behaves on each environment and the secrets inventory
-into [ai/context/deployment.md](ai/context/deployment.md); how the product
-deploys and how to operate it is in
+workspace, how sign-up behaves on each environment and the secrets the
+product uses into [ai/context/deployment.md](ai/context/deployment.md); how
+the product deploys and how to operate it is in
 [ai/context/operations.md](ai/context/operations.md).
 <!-- 02-docs:end -->
 
@@ -42,6 +42,9 @@ pnpm lint
 pnpm test
 pnpm build              # next build + opennextjs-cloudflare build → apps/web/.open-next
 ```
+
+Run them before you push: a pull request's CI builds and dry-deploys the
+app, but type-checks, lints and tests nothing.
 
 The build needs no Supabase project: without one it inlines the committed
 `wrangler.jsonc`'s placeholder values, and nothing calls them.
@@ -143,5 +146,4 @@ records the domain. Replace it with yours in the same pull request as
 
 | Workflow | What it runs |
 |---|---|
-| `checks.yml` | install, wire fixture, typecheck, lint, test, build — every pull request (not pushes: on `main`, `ci.yml` must be the only run a commit has) |
-| `ci.yml` | the Orun pipeline: `orun plan --changed`, then one job per lane; applies and deploys stage → prod on merge |
+| `ci.yml` | the Orun pipeline, and the only workflow: `orun plan --changed`, then one job per lane. A pull request runs the verify lanes — the app built and dry-deployed for each environment, the Supabase root checked and planned — with nothing applied or deployed (typecheck, lint and the tests are `pnpm` scripts you run before you push, above); a merge applies and deploys stage → prod |

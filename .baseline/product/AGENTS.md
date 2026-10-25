@@ -40,8 +40,10 @@ stage before prod. `dev` only verifies.
   one branch, one pull request against `main` — `orun pr open` names the
   branch after the task and records it in the pull request.
 - Before you push: `pnpm install`, `pnpm run wire:fixture`, `pnpm typecheck`,
-  `pnpm lint`, `pnpm test`, `pnpm build`. `checks.yml` runs the same on the
-  pull request; `orun validate` and `orun plan` show what `ci.yml` will plan.
+  `pnpm lint`, `pnpm test`, `pnpm build`. Nothing runs them for you: the pull
+  request's `ci.yml` lanes build and dry-deploy the app and plan the Supabase
+  root, and type-check, lint and test nothing. `orun validate` and
+  `orun plan` show what `ci.yml` will plan.
 - Merging is deploying. Watch the run on `main`, then probe the URLs in
   `ai/context/deployment.md`: a run that planned nothing deployed nothing.
 - A table in `public` gets row-level security and `auth.uid()` policies in the
@@ -62,7 +64,8 @@ stage before prod. `dev` only verifies.
   redirect allow-list and `mailer_autoconfirm`, and undoes a dashboard edit.
 - Secret values, anywhere — the repository, `ai/context/`, a log, GitHub.
   Provider credentials are brokered per run; secrets are inspected by name.
-- `checks.yml` on pull requests only: on `main`, `ci.yml` is the one run a
-  commit has.
+- `ci.yml` as the only workflow on a push to `main`: whatever watches a
+  merge reads the newest run for its commit, and a second workflow there
+  could be the run it reads.
 - The last line of a `component.yaml` (`# orun: redeploy …`) is a deploy
   trigger; change it only to redeploy that component.
