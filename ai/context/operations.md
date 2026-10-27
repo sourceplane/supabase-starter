@@ -155,6 +155,7 @@ orun integrations list --org <ws> --json && orun cloud check --org <ws>
 | task | how |
 |---|---|
 | deploy a change | merge to `main`; watch the run; failed lanes → `gh run rerun --failed` |
+| deploy by hand | Orunbase's Deploy button, or `gh workflow run ci.yml --ref main -f environment=<env> [-f component=<a,b>]` — the named components (blank: every one) run in that environment as a merge runs them; started off `main` it is refused |
 | require email confirmation | SMTP first, then `authEmailConfirmation: "true"` (above) |
 | add a table | create it with `enable row level security` and `auth.uid()` policies (above); the day the product has migrations, they go in a component under `packages/` with a migrate step that reads `SUPABASE_DB_URL` (Evolution, below) |
 | redeploy without a change | edit the last line of the component's `component.yaml` (`# orun: redeploy <reason> <stamp>`) and merge — it is a deploy trigger, nothing reads it |
